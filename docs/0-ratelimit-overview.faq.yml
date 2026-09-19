@@ -1,0 +1,55 @@
+id: x-ratelimit-0-ratelimit-overview
+
+<data>:
+  - name:
+      en: rate-limit-fundamentals
+    qa:
+      - id: what-is-rate-limit
+        question:
+          en: What is an API rate limit?
+        answer:
+          en: |
+            A rate limit caps how many requests a client can make
+            to an API within a defined window. Most commonly
+            "X requests per Y seconds/minutes/hours". Two
+            reasons vendors impose them: (1) protect the service
+            from runaway clients / DoS; (2) tier access by plan
+            (free vs paid). The rate is communicated via response
+            headers (X-RateLimit-Limit etc.) or error codes
+            (Aliyun's Throttling.* family).
+        confidence: 10
+        reference:
+          - docs/0-ratelimit-overview.en.md
+
+      - id: what-is-rate-limit-window
+        question:
+          en: What's a "rate limit window"?
+        answer:
+          en: |
+            The window is the time over which requests are counted.
+            Common shapes: fixed window (e.g., 5000 requests per
+            hour, resets at the top of the hour), sliding window
+            (e.g., 5000 requests in any 60-minute window), or
+            token bucket (continuous refill). GitHub uses fixed
+            1-hour windows; Cloudflare uses sliding 5-minute
+            windows; Vercel uses GB-hours, which is a continuous
+            budget rather than a windowed rate.
+        confidence: 9
+        reference:
+          - docs/0-ratelimit-overview.en.md
+
+      - id: rate-limit-vs-quota
+        question:
+          en: Rate limit vs quota — what's the difference?
+        answer:
+          en: |
+            Rate limit: per-time-window request count (e.g., 5000
+            per hour). Quota: total budget over a longer period
+            (e.g., 100 GB-hours per month). A vendor might have
+            both: a per-second rate limit on the API endpoint AND
+            a monthly quota on the underlying resource. Vercel
+            is the clearest example — 1 RPS API rate limit + 100
+            GB-hours / month Serverless quota, both apply.
+        confidence: 9
+        reference:
+          - docs/5-vercel.en.md

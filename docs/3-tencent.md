@@ -1,50 +1,53 @@
 ---
-x-title: 腾讯云 API 3.0 速率限制 —— 20 QPS 默认与 X-RateLimit-* 头
-x-desc: 腾讯云 Cloud API 3.0 默认每用户 20 QPS；`X-RateLimit-Limit / Remaining / Window` 头（最接近 IETF RateLimit-* draft 的中国云厂）；`DescribeApiRateLimit` 接口用于程序化读取自己的限额。
-x-sidebar: 腾讯云速率限制
-x-keywords: tencent, 腾讯云, ratelimit, qps, cloud api 3.0, x-ratelimit-limit, x-ratelimit-remaining, describleapiratelimit
+x-title: Tencent Cloud API 3.0 rate limits — 20 QPS default and X-RateLimit-* headers
+x-desc: Tencent Cloud API 3.0's per-user 20 QPS default; the `X-RateLimit-Limit / Remaining / Window` headers (closest to the IETF `RateLimit-*` draft among Chinese cloud providers); and `DescribeApiRateLimit` for programmatic quota lookup.
+x-sidebar: Tencent Cloud rate limits
+x-keywords: tencent, ratelimit, qps, cloud api 3.0, x-ratelimit-limit, x-ratelimit-remaining, describleapiratelimit
 x-json-ld:
   '@context': https://schema.org
   '@graph':
     - '@type': TechArticle
-      headline: '腾讯云 Cloud API 3.0 速率限制'
-      inLanguage: 'zh-CN'
-      about: '腾讯云各产品 API 速率限制与响应头'
+      headline: 'Tencent Cloud API 3.0 rate limits'
+      inLanguage: 'en'
+      about: 'Tencent Cloud API 3.0 rate limits and response headers'
 ---
 
-# 腾讯云 API 3.0 速率限制
+# Tencent Cloud API 3.0 rate limits
 
-腾讯云 Cloud API 3.0 走"默认 20 QPS + 通用 `X-RateLimit-*` 头"的
-路线 —— 在中国云厂里属于**最贴近 IETF `RateLimit-*` draft 的实
-现**。客户端写起来比阿里云省事，比 Cloudflare 标准化。
+Tencent Cloud's Cloud API 3.0 follows the "default 20 QPS
++ standard `X-RateLimit-*` headers" approach — among
+Chinese cloud providers, this is **the closest match to the
+IETF `RateLimit-*` draft**. Cleaner client code than
+Aliyun, more standardized than Cloudflare.
 
-## 默认全局限额
+## Default global limit
 
-| 项 | 值 | 范围 |
+| Field | Value | Scope |
 | --- | --- | --- |
-| 默认 QPS | **20** | 每用户每 API |
-| 时间窗 | 1 秒 | 滑动窗口 |
-| 账户级聚合上限 | 1,000 QPS | 所有 API 合计（典型值） |
+| Default QPS | **20** | per user, per API |
+| Window | 1 second | sliding |
+| Account-level aggregate | 1,000 QPS | all APIs combined (typical) |
 
-20 QPS 比阿里云的 100 QPS 紧。**默认假设要写成"20"**，不要
-拿 100 / 200 这种乐观值。
+20 QPS is tighter than Aliyun's 100 QPS. **Default
+assumptions should be 20**, not optimistic values like
+100 or 200.
 
-## 各产品的具体限制（待 CI 核实）
+## Product-specific limits (pending CI verification)
 
-| 产品 | 默认限 | 备注 |
+| Product | Default limit | Notes |
 | --- | --- | --- |
-| CVM（云服务器） | 通常 50–100 QPS | 视实例 / 区域 |
-| CDB（云数据库） | 通常 50 QPS | 写操作更低 |
-| COS（对象存储） | 较高 | 走独立 SDK |
-| CDN | 视接口 | 刷新 / 预热有日上限 |
-| VPC | 通常 50 QPS | |
+| CVM (Cloud Virtual Machine) | typically 50–100 QPS | varies by instance / region |
+| CDB (Cloud Database) | typically 50 QPS | write operations lower |
+| COS (Object Storage) | higher | independent SDK path |
+| CDN | varies by endpoint | refresh / prefetch have daily caps |
+| VPC | typically 50 QPS | |
 
-具体数字需 `data/tencent.yaml` 与 `DescribeApiRateLimit` 联动核
-实。
+Specific numbers need `data/tencent.yaml` to be paired
+with `DescribeApiRateLimit` for verification.
 
-## 响应头（最像 IETF `RateLimit-*` draft）
+## Response headers (closest to IETF `RateLimit-*` draft)
 
-腾讯云 API 在大多数 endpoint 返回：
+Tencent Cloud API on most endpoints returns:
 
 ```http
 X-RateLimit-Limit: 20
@@ -53,30 +56,32 @@ X-RateLimit-Window: 1
 Retry-After: 1
 ```
 
-- `X-RateLimit-Limit` —— 当前窗口上限（20）
-- `X-RateLimit-Remaining` —— 剩余可调用次数
-- `X-RateLimit-Window` —— 窗口长度（秒）
-- `Retry-After` —— 限流触发时的退避秒数（429 才有）
+- `X-RateLimit-Limit` — current window ceiling (20)
+- `X-RateLimit-Remaining` — remaining calls in window
+- `X-RateLimit-Window` — window length in seconds
+- `Retry-After` — backoff seconds on 429 only
 
-跟 RFC 9745 的 `RateLimit-Limit / Remaining / Reset` 形态几乎
-一致，只是字段名带 `X-` 前缀。
+The naming is almost identical to RFC 9745's
+`RateLimit-Limit / Remaining / Reset`, just with the
+`X-` prefix.
 
-## `DescribeApiRateLimit`：程序化读取自己的限额
+## `DescribeApiRateLimit`: programmatic quota lookup
 
-腾讯云提供 `DescribeApiRateLimit` API，**返回当前账号每个 API
-当前的限流配置**。这条对以下场景特别有用：
+Tencent Cloud exposes `DescribeApiRateLimit` to **read
+your account's actual quota configuration** for each API.
+This is useful for:
 
-- 上线前用 `DescribeApiRateLimit` 查一遍你关心的 API，确认实
-  际限额（不是默认假设的 20）
-- 监控自己的限额 —— 周期跑这个 API，看账户级 / API 级聚合
-  是多少
+- Pre-launch: query every API you'll touch, confirm the
+  actual limits (not the default assumption of 20)
+- Monitoring: periodic runs of `DescribeApiRateLimit` to
+  track account-level and API-level quotas
 
 ```sh
 tccli cam DescribeApiRateLimit \
   --ApiName "DescribeInstances"
 ```
 
-返回示例：
+Sample response:
 
 ```json
 {
@@ -87,7 +92,7 @@ tccli cam DescribeApiRateLimit \
 }
 ```
 
-## 客户端实现要点
+## Client implementation notes
 
 ```python
 import time
@@ -99,31 +104,35 @@ def call_tencent(url, headers, max_retries=5):
         if response.status_code != 429:
             return response
         retry_after = int(response.headers.get("Retry-After", "1"))
-        # 腾讯云 Retry-After 是秒数（整数）
+        # Tencent Cloud's Retry-After is integer seconds
         time.sleep(retry_after)
     raise RateLimitExceeded()
 ```
 
-注意：
+Three notes:
 
-1. **`Retry-After` 是整数秒**，不是 HTTP-date 字符串。
-2. **窗口是 1 秒**。失败 1 秒后立即重试通常就过了。指数退避
-   对腾讯云不必要，简单 sleep + 重试即可。
-3. **优先用 `X-RateLimit-Remaining` 做"配额查询"**。不要主动
-   重试来探测 quota —— 一次失败就消耗一次配额。
+1. **`Retry-After` is integer seconds**, not HTTP-date
+   strings.
+2. **Window is 1 second.** A single failed request + 1
+   second sleep is usually enough. Exponential backoff is
+   unnecessary for Tencent; simple sleep + retry works.
+3. **Use `X-RateLimit-Remaining` for budget tracking.**
+   Don't actively retry to probe quota — a failed request
+   burns one quota unit.
 
-## 与阿里云 / Cloudflare / GitHub 的关键差异
+## Key differences vs Aliyun / Cloudflare / GitHub
 
-| 项 | Cloudflare | GitHub | 阿里云 | 腾讯云 |
+| Field | Cloudflare | GitHub | Aliyun | Tencent |
 | --- | --- | --- | --- | --- |
-| 默认 QPS | 1200/5min | 5000/hr | 100/sec | **20/sec** |
-| HTTP 状态码 | 429 | 429 | 400/403 | 429 |
-| 错误细节 | `Retry-After` | `X-RateLimit-*` | `Code` 字段 | `X-RateLimit-*` |
-| 头部格式 | 自定义 | 完整 draft | 无 | **最像 draft** |
+| Default QPS | 1200/5min | 5000/hr | 100/sec | **20/sec** |
+| HTTP status | 429 | 429 | 400/403 | 429 |
+| Error detail | `Retry-After` | `X-RateLimit-*` | `Code` field | `X-RateLimit-*` |
+| Header format | custom | full draft | none | **closest to draft** |
 
-## 与腾讯云限流相关的产品页参考
+## Reference links
 
-- 通用 API 限流说明：[cloud.tencent.com/document/product/301/30495](https://cloud.tencent.com/document/product/301/30495)
-- `DescribeApiRateLimit`：[cloud.tencent.com/document/api/306/7234](https://cloud.tencent.com/document/api/306/7234)
+- General API rate limit docs: <https://cloud.tencent.com/document/product/301/30495>
+- `DescribeApiRateLimit`: <https://cloud.tencent.com/document/api/306/7234>
 
-具体数字需 CI scraper 抓取后写入 `data/tencent.yaml`。
+Specific numbers need CI scraper to write to
+`data/tencent.yaml`.

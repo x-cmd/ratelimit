@@ -1,50 +1,56 @@
 ---
-x-title: 阿里云 OpenAPI 速率限制 —— 默认 100 QPS 与 Throttling 错误码
-x-desc: 阿里云 OpenAPI 默认每用户 100 QPS 的全局默认；不同产品（ECS/RAM/CDN）的特殊下限；非 RFC 6585 的错误码 `Throttling.User / Throttling.Api / Throttling.CloudBox`；客户端实现要点。
-x-sidebar: 阿里云速率限制
-x-keywords: aliyun, 阿里云, ratelimit, qps, openapi, throttling, error code, ecs, ram, cdn
+x-title: Aliyun OpenAPI rate limits — 100 QPS default and the Throttling error codes
+x-desc: Aliyun OpenAPI's default per-user 100 QPS rate limit; product-specific lower limits (ECS/RAM/CDN); the non-RFC-6585 error codes `Throttling.User / Throttling.Api / Throttling.CloudBox`; client implementation notes.
+x-sidebar: Aliyun rate limits
+x-keywords: aliyun, ratelimit, qps, openapi, throttling, error code, ecs, ram, cdn
 x-json-ld:
   '@context': https://schema.org
   '@graph':
     - '@type': TechArticle
-      headline: '阿里云 OpenAPI 速率限制'
-      inLanguage: 'zh-CN'
-      about: '阿里云各产品 API 速率限制与错误码'
+      headline: 'Aliyun OpenAPI rate limits'
+      inLanguage: 'en'
+      about: 'Aliyun OpenAPI per-product rate limits and error codes'
 ---
 
-# 阿里云 OpenAPI 速率限制
+# Aliyun OpenAPI rate limits
 
-阿里云 API 网关的速率限制故事与 Cloudflare / GitHub 显著不同：
-**没有标准的 RFC 6585 `Retry-After` 头**。阿里云用自定义错误码体
-系区分不同层级的限流，对客户端实现有具体影响。
+Aliyun's rate-limit story differs from Cloudflare's and
+GitHub's in one key way: **no standard RFC 6585 `Retry-After`
+header**. Aliyun uses a custom error-code scheme to
+distinguish which tier of rate limit was hit, and clients
+need to parse the response body to handle each tier.
 
-## 默认全局限额
+## Default global limit
 
-| 项 | 值 | 范围 |
+| Field | Value | Scope |
 | --- | --- | --- |
-| 默认 QPS | **100** | 每个用户每个 API |
-| 时间窗 | 1 秒 | 滑动窗口 |
+| Default QPS | **100** | per user, per API |
+| Window | 1 second | sliding |
 
-多数 OpenAPI 默认遵循此限。但**部分 API 设定了更低的具体下限**——
-不能用"100 QPS 普适"假设所有接口。
+Most OpenAPI endpoints follow this default. But **some
+APIs publish a lower specific limit** — you cannot assume
+"100 QPS applies universally".
 
-## 各产品的具体限制（待 CI 核实）
+## Product-specific limits (pending CI verification)
 
-| 产品 / API | 默认限 | 备注 |
+| Product / API | Default limit | Notes |
 | --- | --- | --- |
-| ECS CreateInstance | 60 / 分钟 | 创建型操作通常更低 |
-| ECS RunCommand | 较低 | 命令执行有额外管控 |
-| RAM 用户 / 组 | 视产品页 | RAM 通常单独限额 |
-| CDN 刷新 / 预热 | 100 / 天每域名 | 写操作每日限额 |
+| ECS `CreateInstance` | 60 / minute | Create-class operations typically lower |
+| ECS `RunCommand` | lower | Command execution has extra governance |
+| RAM (users / groups) | varies | RAM typically has its own quota |
+| CDN refresh / prefetch | 100 / day per domain | Write operations have daily caps |
 
-> ⚠️ 上表数字均标记 `verified: false`，需 CI scraper 与各
-> 产品官方文档比对核实。**生产环境集成前请直接查产品页**。
+> ⚠️ The numbers above are all marked `verified: false` —
+> the CI scraper must pull each product's official doc and
+> cross-check before publish. **Always verify against the
+> live product page before launching integration.**
 
-## 错误码体系（与 RFC 6585 不同）
+## Error-code scheme (not RFC 6585)
 
-阿里云 OpenAPI 不返回标准 HTTP 429。当触发限流时，返回
-`HTTP 400` 或 `HTTP 403`，响应体里通过 `Code` 字段标记具体
-原因：
+Aliyun OpenAPI does NOT return HTTP 429 for rate limiting.
+On trigger, it returns `HTTP 400` or `HTTP 403`, with the
+`Code` field in the response body specifying which tier
+was hit:
 
 ```json
 {
@@ -55,18 +61,18 @@ x-json-ld:
 }
 ```
 
-`Code` 字段的三种取值的实际含义：
+The three `Code` values:
 
-| Code | 触发场景 |
+| Code | Trigger |
 | --- | --- |
-| `Throttling.User` | 当前用户级限流达到上限 |
-| `Throttling.Api` | 当前 API 的全局限流达到上限（其他人也在打满） |
-| `Throttling.CloudBox` | 实例 / Region 级别限流达到上限 |
+| `Throttling.User` | Per-user rate limit reached |
+| `Throttling.Api` | Per-API global rate limit reached (other tenants are also maxing) |
+| `Throttling.CloudBox` | Per-instance / per-region rate limit reached |
 
-**关键陷阱**：客户端不能只看 HTTP 状态码决定要不要重试 —— 必
-须解析 `Code` 字段。
+**Key trap**: clients cannot decide whether to retry based
+on HTTP status alone — the `Code` body field must be parsed.
 
-## 客户端实现要点
+## Client implementation notes
 
 ```python
 import time
@@ -77,7 +83,7 @@ def call_aliyun(action, params, ak, sk):
     for attempt in range(5):
         response = requests.post(
             f"https://{params.pop('product')}.aliyuncs.com",
-            params={"Action": action, **params, ...}
+            params={"Action": action, **params}
         )
         body = response.json()
         code = body.get("Code", "")
@@ -94,29 +100,31 @@ def call_aliyun(action, params, ak, sk):
     raise RuntimeError("rate limited after 5 tries")
 ```
 
-三件事要注意：
+Three things to watch:
 
-1. **错误码分支处理。** `Throttling.User`（个人级）1 秒退避就够；
-   `Throttling.Api`（API 级）可能需要更长；`Throttling.CloudBox`
-   （资源级）可能需要几十秒。
-2. **区分产品默认 vs 实际限额。** 100 QPS 是默认，但部分产品（ECS
-   Create、RDS、SLB 等）有专门的低限额。要在 `data/<vendor>.yaml`
-   里维护每个产品 / 接口的实际值。
-3. **不要假定 Retry-After。** 阿里云不返回这个头；解析 `Code` 才是
-   可靠路径。
+1. **Branch on the `Code` field.** `Throttling.User`
+   (user-level) recovers in 1 second; `Throttling.Api`
+   (API-level) needs longer; `Throttling.CloudBox`
+   (resource-level) can need tens of seconds.
+2. **Distinguish product default vs. actual limit.**
+   100 QPS is the default but specific products (ECS
+   Create, RDS, SLB) have dedicated lower limits. Maintain
+   per-product actual values in `data/aliyun.yaml`.
+3. **Don't rely on `Retry-After`.** Aliyun does not emit
+   it; parsing the `Code` field is the only reliable path.
 
-## 与 Cloudflare / GitHub 的关键差异
+## Key differences vs Cloudflare / GitHub
 
-| 项 | Cloudflare | GitHub | 阿里云 |
+| Field | Cloudflare | GitHub | Aliyun |
 | --- | --- | --- | --- |
-| HTTP 状态码 | 429 | 429 | 400 / 403 |
-| 错误细节 | `Retry-After` 头 | `X-RateLimit-*` 头 | `Code` 字段 |
-| 跨产品统一限额？ | 是（1200/5min） | 部分（核心 5000，搜索 30） | 否（每产品各自） |
+| HTTP status code | 429 | 429 | 400 / 403 |
+| Error detail | `Retry-After` header | `X-RateLimit-*` headers | `Code` body field |
+| Cross-product uniform quota? | yes (1200/5min) | partial (core 5000, search 30) | no (per product) |
 
-## 与阿里云限流相关的产品页参考
+## Reference links
 
-- ECS API 限流：[help.aliyun.com/document_detail/25485.html](https://help.aliyun.com/document_detail/25485.html)
-- 全局 OpenAPI 调用：见具体产品 API 参考首页的"使用限制"章节
-- RAM 限流：见 RAM 产品文档的"API 调用限制"段落
+- ECS API rate limits: <https://help.aliyun.com/document_detail/25485.html>
+- General OpenAPI limits: see each product's "使用限制" section
+- RAM API limits: see RAM product docs
 
-具体数字需 CI scraper 抓取后写入 `data/aliyun.yaml`。
+Specific numbers need CI scraper to write to `data/aliyun.yaml`.

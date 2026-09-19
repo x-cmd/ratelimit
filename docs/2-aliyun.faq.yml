@@ -1,0 +1,39 @@
+id: x-ratelimit-2-aliyun
+
+<data>:
+  - name:
+      en: aliyun
+    qa:
+      - id: aliyun-why-no-headers
+        question:
+          en: Why doesn't Aliyun return standard rate-limit headers?
+        answer:
+          en: |
+            Aliyun OpenAPI uses a custom error-code scheme rather
+            than RFC 6585 429 + Retry-After. On rate-limit trigger,
+            the response body contains a `Code` field with one
+            of three values: `Throttling.User` (per-user limit),
+            `Throttling.Api` (per-API global limit), or
+            `Throttling.CloudBox` (per-resource / per-region
+            limit). Clients must parse the body and branch on
+            this — HTTP status alone is not enough.
+        confidence: 9
+        reference:
+          - docs/2-aliyun.en.md
+
+      - id: aliyun-three-tier-throttling
+        question:
+          en: What's the difference between the three Throttling.* codes?
+        answer:
+          en: |
+            `Throttling.User` — your per-user quota is hit. Most
+            common; recovers in 1 second with simple backoff.
+            `Throttling.Api` — the API's global quota (across all
+            tenants) is hit; you're competing with everyone else
+            using this API. Needs longer backoff (5+ seconds).
+            `Throttling.CloudBox` — the resource itself
+            (instance / region) is congested. May need tens of
+            seconds to recover; consider regional failover.
+        confidence: 9
+        reference:
+          - docs/2-aliyun.en.md

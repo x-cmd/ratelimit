@@ -1,0 +1,39 @@
+id: x-ratelimit-6-bandwagonhost
+
+<data>:
+  - name:
+      en: bandwagonhost
+    qa:
+      - id: bandwagonhost-port-25
+        question:
+          en: Why can't I send email from my BandwagonHost VPS?
+        answer:
+          en: |
+            Outbound port 25 (SMTP) is blocked by default on all
+            BandwagonHost VPS plans per their TOS — anti-spam
+            policy. Three workarounds: (1) submit a support
+            request to unblock, with a justified use case
+            (transactional email, not bulk). (2) Use a
+            transactional email provider (SendGrid / Mailgun /
+            Postmark / SES) on port 587 (or 465 + TLS), which is
+            NOT blocked. (3) Use a provider's HTTP API — no SMTP
+            at all. Trying custom ports or SMTP-via-Gmail relay is
+            fragile and TOS-violating.
+        confidence: 9
+        reference:
+          - docs/6-bandwagonhost.en.md
+
+      - id: bandwagonhost-bandwidth-soft-cap
+        question:
+          en: What happens if I exceed my monthly bandwidth?
+        answer:
+          en: |
+            Bandwidth caps are soft, not hard. BandwagonHost
+            notifies you when you approach the limit; larger
+            plans may charge overage fees. Hard throttling
+            (cutting off service) is atypical. If your workload
+            regularly hits the cap, upgrade to a higher-tier plan
+            rather than expecting the cap to be raised.
+        confidence: 8
+        reference:
+          - docs/6-bandwagonhost.en.md

@@ -1,0 +1,51 @@
+id: x-ratelimit-1-cloudflare
+
+<data>:
+  - name:
+      en: cloudflare
+    qa:
+      - id: cloudflare-rest-quota-free-vs-pro
+        question:
+          en: Is Cloudflare's REST API quota different between Free and Pro?
+        answer:
+          en: |
+            No — both Free and Pro get 1200 requests / 5 min /
+            user. The differentiation between plans is on the
+            consumer side (HTTP request caps per zone, Workers
+            quota, KV/R2/D1 limits), not on the operator-side
+            API quota. Enterprise plans have custom quotas
+            negotiated separately.
+        confidence: 10
+        reference:
+          - docs/1-cloudflare.en.md
+
+      - id: cloudflare-cf-mitigated-vs-429
+        question:
+          en: How do I tell the difference between a 429 rate-limit and a `cf-mitigated` challenge?
+        answer:
+          en: |
+            429 = rate limit. The client made too many requests;
+            honor `Retry-After` and back off. `cf-mitigated: challenge|block`
+            = abuse defense. Cloudflare detected patterns it
+            considers abusive (User-Agent strings, automation
+            patterns, burst frequency); this is NOT a rate limit
+            and retrying immediately usually makes it worse.
+            Different handling: 429 = sleep + retry; cf-mitigated
+            = back off significantly or rotate identity.
+        confidence: 9
+        reference:
+          - docs/1-cloudflare.en.md
+
+      - id: cloudflare-retry-after-format
+        question:
+          en: What's the format of Cloudflare's Retry-After header?
+        answer:
+          en: |
+            Integer seconds (e.g., `Retry-After: 60`). Cloudflare
+            does NOT consistently emit X-RateLimit-* headers —
+            many endpoints return only 429 + Retry-After when
+            rate-limited. Watch for the response status, not
+            the headers, as the primary signal.
+        confidence: 8
+        reference:
+          - docs/1-cloudflare.en.md

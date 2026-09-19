@@ -1,0 +1,56 @@
+id: x-ratelimit-5-vercel
+
+<data>:
+  - name:
+      en: vercel
+    qa:
+      - id: vercel-gb-hours-formula
+        question:
+          en: How is the Vercel GB-hours quota calculated?
+        answer:
+          en: |
+            GB-hours = (memory in GB) × (execution time in hours) ×
+            (number of invocations). Example: 256 MB function,
+            100k invocations/month, average 2 seconds each =
+            0.256 × (2/3600) × 100000 ≈ 14.2 GB-hours. Hobby is
+            100 GB-hr/month; Pro is 1000 GB-hr/month. Lower memory
+            = lower per-invocation cost but higher OOM risk on
+            memory-intensive paths.
+        confidence: 9
+        reference:
+          - docs/5-vercel.en.md
+
+      - id: vercel-402-vs-500
+        question:
+          en: How do I distinguish a Vercel plan-cap from a code error?
+        answer:
+          en: |
+            HTTP 402 = plan-cap exceeded (Hobby's 100 GB-hr/mo or
+            Pro's 1000 GB-hr/mo). HTTP 500 = code error in your
+            function. HTTP 504 = function timeout. These need
+            different alert routing: 402 should page billing /
+            growth team (capacity issue), 500 should page on-call
+            (code bug), 504 should page on-call but indicates a
+            perf issue rather than correctness.
+        confidence: 9
+        reference:
+          - docs/5-vercel.en.md
+
+      - id: vercel-edge-vs-serverless
+        question:
+          en: When should I use Edge Functions vs Serverless Functions?
+        answer:
+          en: |
+            Edge Functions: V8 isolates, low per-invocation cost,
+            hard 1MB code size, fast cold start. Use for
+            request-time middleware — auth checks, A/B test
+            assignment, routing decisions, geolocation-based
+            redirects. Serverless Functions: full Node.js /
+            Python / Go runtime, higher per-invocation cost,
+            higher ceiling. Use for compute-heavy paths — image
+            processing, PDF generation, anything CPU-intensive
+            or library-heavy. They have separate quotas on the
+            same plan.
+        confidence: 8
+        reference:
+          - docs/5-vercel.en.md

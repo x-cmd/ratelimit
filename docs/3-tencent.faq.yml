@@ -1,0 +1,52 @@
+id: x-ratelimit-3-tencent
+
+<data>:
+  - name:
+      en: tencent
+    qa:
+      - id: tencent-default-qps
+        question:
+          en: What's Tencent Cloud API 3.0's default rate limit?
+        answer:
+          en: |
+            20 requests per second per user per API by default.
+            Window is 1 second. This is tighter than Aliyun's
+            100 QPS default — assume 20 QPS as the baseline for
+            Tencent Cloud integrations, not optimistic values.
+            Specific products may publish higher limits (CVM
+            50-100 QPS, COS higher, etc.) — use
+            DescribeApiRateLimit to read actual quotas.
+        confidence: 9
+        reference:
+          - docs/3-tencent.en.md
+
+      - id: tencent-describe-api-rate-limit
+        question:
+          en: What's the DescribeApiRateLimit API for?
+        answer:
+          en: |
+            It returns your account's actual rate-limit
+            configuration for any API: max requests, strategy
+            (RegionLevel, GlobalLevel, etc.), and window in
+            seconds. Use it (a) before launching integration to
+            verify the actual limit rather than the 20 QPS
+            default, and (b) periodically as a monitoring check
+            on your account-level aggregate quota.
+        confidence: 9
+        reference:
+          - docs/3-tencent.en.md
+
+      - id: tencent-headers-format
+        question:
+          en: What do Tencent Cloud's X-RateLimit-* headers mean?
+        answer:
+          en: |
+            X-RateLimit-Limit = current window ceiling. X-RateLimit-
+            Remaining = remaining calls in window. X-RateLimit-Window
+            = window length in seconds. Retry-After = backoff
+            seconds on 429 only (integer seconds). This matches
+            the IETF RateLimit-* draft (RFC 9745) almost exactly,
+            just with the historical X- prefix.
+        confidence: 9
+        reference:
+          - docs/3-tencent.en.md
