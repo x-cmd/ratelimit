@@ -49,3 +49,109 @@ id: x-ratelimit-1-cloudflare
         confidence: 8
         reference:
           - docs/1-cloudflare.en.md
+
+      - id: cloudflare-vs-aws-cloudfront
+        question:
+          en: Cloudflare or AWS CloudFront for edge / CDN?
+        answer:
+          en: |
+            Different optimization targets.
+
+            **Cloudflare wins on developer experience and global
+            reach.** One-click setup, free tier, 200+ cities
+            anycast network. Strengths: DDoS protection (built-in,
+            no extra cost), Workers for edge compute, R2 for
+            S3-compatible storage, KV for low-latency key-value.
+            Best for: greenfield projects, multi-cloud, edge-
+            first architectures.
+
+            **AWS CloudFront wins on AWS-stack integration.** If
+            you're already on AWS (S3, Lambda, IAM, ACM
+            certificates), CloudFront ties in natively: signed
+            URLs from S3, Lambda@Edge for request transforms,
+            AWS Shield Advanced for higher-tier DDoS. Best for:
+            AWS-centric stacks where every other piece of infra
+            is already in AWS.
+
+            **Rate-limit comparison is irrelevant for serving
+            traffic** (both are unmetered for normal HTTP
+            serving); the difference matters when you call
+            CloudFront's API to invalidate caches or create
+            distributions. Cloudflare's API is friendlier; AWS
+            has stricter throttling on management-API calls.
+        confidence: 8
+        reference:
+          - docs/1-cloudflare.en.md
+
+      - id: cloudflare-vs-aliyun-cdn
+        question:
+          en: Cloudflare or Aliyun CDN for a global site with mainland China traffic?
+        answer:
+          en: |
+            **Aliyun CDN is the better choice for mainland China
+            users.** ICP-registered domains in China get the best
+            latency through Aliyun's mainland PoPs. Aliyun's CDN
+            pricing is also lower than Cloudflare for high-volume
+            mainland traffic.
+
+            **Cloudflare's mainland-China story is via
+            Cloudflare China Network (CCN)**, a partnership with
+            JD Cloud that requires ICP registration and a separate
+            onboarding. Without CCN, mainland users hit Cloudflare's
+            HK or Singapore PoPs with higher latency.
+
+            **For a non-China audience**, Cloudflare wins on the
+            same merits as the AWS comparison (DX, global anycast).
+
+            A practical hybrid: Cloudflare as the global edge,
+            Aliyun CDN as the mainland China edge, with DNS
+            geolocation routing the right users to the right edge.
+            This is common for cross-border products.
+        confidence: 8
+        reference:
+          - docs/1-cloudflare.en.md
+          - docs/2-aliyun.en.md
+
+      - id: cloudflare-vs-vercel
+        question:
+          en: Cloudflare or Vercel?
+        answer:
+          en: |
+            Different layers. They're complementary, not
+            competitors — you can put a Vercel-deployed frontend
+            behind Cloudflare's edge without conflict.
+
+            **Cloudflare is infrastructure.** CDN, DNS, DDoS
+            protection, WAF, edge compute via Workers. You point
+            your domain at Cloudflare's nameservers and Cloudflare
+            sits in front of whatever origin you run.
+
+            **Vercel is a frontend deployment platform.** Git-push
+            to deploy, automatic preview deploys per branch, edge
+            runtime via Edge Functions. Best DX for Next.js (the
+            team behind Next.js also builds Vercel), Astro, and
+            similar frameworks.
+
+            **When to pick Cloudflare alone:** you want edge / CDN /
+            DDoS protection in front of any origin (your own VPS,
+            AWS, anywhere).
+
+            **When to pick Vercel alone:** your project is a
+            frontend (Next.js, Astro, etc.) and you want zero-
+            config git-push deploys with preview branches.
+
+            **When to use both:** Vercel for frontend deploys,
+            Cloudflare in front for DNS / DDoS / additional edge
+            logic. Common pattern for production SaaS.
+
+            **Rate-limit comparison:** Cloudflare's edge is
+            unmetered for normal traffic; Vercel has 100
+            deployments/day on Hobby plan (limits expansion)
+            and 100 GB-hours / month of function execution. If
+            you're deploying a lot, Vercel's deployment cap is the
+            real constraint, not Cloudflare's traffic serving.
+        confidence: 9
+        reference:
+          - docs/1-cloudflare.en.md
+          - docs/5-vercel.en.md
+

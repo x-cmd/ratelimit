@@ -37,3 +37,68 @@ id: x-ratelimit-2-aliyun
         confidence: 9
         reference:
           - docs/2-aliyun.en.md
+
+      - id: aliyun-vs-tencent-wechat-miniprogram
+        question:
+          en: For a WeChat Mini Program backend, Aliyun or Tencent Cloud?
+        answer:
+          en: |
+            Both work; pick by what you're optimizing for.
+
+            **Tencent Cloud has a WeChat-ecosystem edge.** Tencent's
+            CloudBase (TCB), Serverless Cloud Function (SCF),
+            API Gateway, and COS all have first-class WeChat Mini
+            Program integration — the official `wx-server-sdk`
+            and Mini Program cloud-function templates target
+            these. If the Mini Program is your primary product
+            and you're building a serverless backend tightly
+            coupled to WeChat APIs (login, payments, subscribe
+            messages), Tencent's tooling depth wins.
+
+            **Aliyun matches the broader Chinese-cloud feature
+            set** but doesn't have WeChat-specific services in
+            the same way. Pick Aliyun if you're standardizing
+            across a multi-region, multi-product stack (ECS + RDS
+            + OSS + CDN + WAF all under one console and one
+            bill), and the Mini Program is one of several
+            workloads on that stack.
+
+            **Rate-limit implications differ slightly:** Tencent's
+            default 20 QPS is tighter than Aliyun's 100 QPS, so
+            if your Mini Program backend runs many concurrent
+            calls, Tencent's lower default pushes you toward
+            SCF / CloudBase more aggressively than Aliyun's
+            per-ECS / per-RDS model.
+        confidence: 8
+        reference:
+          - docs/2-aliyun.en.md
+          - docs/3-tencent.en.md
+
+      - id: aliyun-vs-tencent-global-tenancy
+        question:
+          en: WeChat Mini Program needs cross-region deployment — Aliyun or Tencent?
+        answer:
+          en: |
+            Tencent Cloud has better APAC coverage in mainland
+            China but a smaller global footprint. Aliyun has
+            more regions globally (US-East, EU-West, APAC-1,
+            etc.) under the Alibaba Cloud international brand.
+            For a Mini Program serving only mainland users,
+            either works; Tencent's latency to WeChat's
+            mainland APIs is marginally better.
+
+            For a Mini Program serving overseas Chinese-speaking
+            users, Aliyun's international regions give you
+            better global latency. Tencent's overseas regions
+            exist but are fewer in number.
+
+            Rate-limit posture doesn't change between
+            single-region and multi-region — both vendors apply
+            the same per-API quotas per region. The `CloudBox`
+            / region-level throttling from Aliyun and Tencent
+            both get hit at higher loads in single-region
+            deployments.
+        confidence: 8
+        reference:
+          - docs/3-tencent.en.md
+

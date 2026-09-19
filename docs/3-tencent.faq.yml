@@ -50,3 +50,68 @@ id: x-ratelimit-3-tencent
         confidence: 9
         reference:
           - docs/3-tencent.en.md
+
+      - id: tencent-vs-aliyun-wechat-miniprogram
+        question:
+          en: For a WeChat Mini Program backend, Tencent Cloud or Aliyun?
+        answer:
+          en: |
+            **Tencent Cloud has the WeChat-ecosystem edge.** Tencent's
+            CloudBase (TCB), Serverless Cloud Function (SCF),
+            API Gateway, and COS all have first-class WeChat Mini
+            Program integration — the official `wx-server-sdk`
+            and Mini Program cloud-function templates target
+            these services. If your Mini Program backend is
+            tightly coupled to WeChat APIs (login, payments,
+            subscribe messages, customer-service webhooks),
+            Tencent's tooling depth and lower friction are
+            meaningful.
+
+            **Aliyun matches the broader Chinese-cloud feature
+            set** but doesn't have WeChat-specific services in
+            the same way. Pick Aliyun if you're standardizing
+            across a multi-region, multi-product stack (ECS + RDS
+            + OSS + CDN + WAF all under one console / one bill)
+            and the Mini Program is one of several workloads.
+
+            **Rate-limit implication:** Tencent's default 20 QPS
+            is tighter than Aliyun's 100 QPS. SCF / CloudBase's
+            serverless model absorbs burst traffic that would
+            otherwise pile up against Tencent's per-user API
+            limit; on Aliyun you typically size ECS or FC
+            instances to the workload up-front.
+        confidence: 8
+        reference:
+          - docs/3-tencent.en.md
+          - docs/2-aliyun.en.md
+
+      - id: tencent-vs-aliyun-serverless-miniprogram
+        question:
+          en: Tencent CloudBase vs Aliyun FC for a Mini Program serverless backend?
+        answer:
+          en: |
+            **Tencent CloudBase (TCB)** is built specifically for
+            Mini Programs — the `wx.cloud.*` SDK calls into it
+            directly with no API Gateway setup. You get WeChat
+            login, payments, and storage SDKs out of the box.
+
+            **Aliyun FC (Function Compute)** is a general-purpose
+            serverless platform; for Mini Program integration you
+            add API Gateway + custom auth. More setup, but you
+            also get unified billing across FC, ECS, OSS, and the
+            rest of the Aliyun stack.
+
+            **Rate-limit-wise**, both platforms throttle per-
+            function concurrency and per-account request rate.
+            CloudBase's defaults are designed for Mini Program
+            traffic patterns (low concurrency, bursty); FC's
+            are more generic. If your Mini Program's traffic
+            pattern is well-defined and bounded, CloudBase is
+            smoother. If you anticipate growth beyond Mini Programs
+            into broader workloads, FC keeps you on a single
+            platform.
+        confidence: 7
+        reference:
+          - docs/3-tencent.en.md
+          - docs/2-aliyun.en.md
+

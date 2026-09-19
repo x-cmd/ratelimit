@@ -54,3 +54,70 @@ id: x-ratelimit-5-vercel
         confidence: 8
         reference:
           - docs/5-vercel.en.md
+
+      - id: vercel-vs-cloudflare-pages
+        question:
+          en: Vercel or Cloudflare Pages for frontend hosting?
+        answer:
+          en: |
+            Both are excellent for static / JAMstack frontends; the
+            choice is about framework fit and total cost.
+
+            **Vercel wins on Next.js DX.** The team behind
+            Next.js also builds Vercel; deployment is git-push,
+            preview branches automatic, image optimization
+            built-in. Best for: Next.js / Astro / SvelteKit
+            projects where the framework integration matters.
+
+            **Cloudflare Pages wins on cost and integration.**
+            Free tier includes unlimited static sites; the same
+            Cloudflare account gives you Workers (edge compute),
+            KV (key-value), R2 (S3-compatible storage), Images.
+            Best for: non-Next.js static sites, projects where
+            you want one provider for both edge and frontend.
+
+            **Rate-limit-wise**, both are unmetered for normal
+            traffic. Vercel has 100 deployments/day on Hobby;
+            Cloudflare Pages has unlimited. If you're deploying
+            many times daily, Cloudflare Pages is friendlier.
+
+            **Hybrid pattern:** Vercel for the Next.js frontend,
+            Cloudflare in front as the CDN/DNS/WAF layer. Common
+            for production SaaS with non-trivial edge logic.
+        confidence: 8
+        reference:
+          - docs/5-vercel.en.md
+          - docs/1-cloudflare.en.md
+
+      - id: vercel-vs-cloudflare-vs-aws-amplify
+        question:
+          en: Vercel vs Cloudflare Pages vs AWS Amplify for frontend hosting?
+        answer:
+          en: |
+            Three reasonable choices, with different ecosystems.
+
+            **Vercel:** best DX for Next.js, opinionated
+            platform. Most cost-predictable. Best when Next.js is
+            the framework.
+
+            **Cloudflare Pages:** cheapest at scale (free tier
+            includes unlimited static sites), tightest edge
+            integration with Workers / KV / R2. Best when
+            Cloudflare is already your edge provider.
+
+            **AWS Amplify:** native integration with AWS
+            services (Cognito, AppSync, Lambda, etc.). Hosting
+            is fine; the value-add is the AWS-stack glue. Best
+            when the rest of the stack is on AWS.
+
+            **Rate-limit-wise:** all three are unmetered for
+            traffic. Deploy limits differ: Vercel Hobby 100/day,
+            Cloudflare Pages unlimited, AWS Amplify build minutes
+            per account. If your bottleneck is build minutes or
+            deployment frequency, Cloudflare Pages is most
+            generous.
+        confidence: 8
+        reference:
+          - docs/5-vercel.en.md
+          - docs/1-cloudflare.en.md
+
