@@ -1,0 +1,63 @@
+# x-cmd/ratelimit —— 各厂商 API 速率限制速查
+
+团队日常使用最多的各厂商 API 速率限制与配额上限的速查。
+本 README 是给落到 GitHub 仓库的访客看的；长文与各厂商深
+度文章放在 `docs/`（被作为 `x-cmd.com/ratelimit` 的官方
+站点发布）。
+
+## 仓库定位
+
+- **给工程师的速查。** 你来查 "Cloudflare 每用户 API 配额"
+  或 "GitHub 的二级速率限制触发条件"。结构化数据在
+  `data/<vendor>.yaml`；厂商级文章在 `docs/`。
+- **可从上游刷新。** 每个 YAML 携带 `verified` 标记与
+  `docs_source` 链接。未来的 `.github/workflows/scrape.yml`
+  任务会定时重抓官方文档、与 YAML 比对、变更时开 PR。
+- **双协议。** 源码、文章、脚本走 Apache 2.0
+  （`LICENSE`）。`data/` 下的速率限制数据表走
+  CC-BY-4.0（`LICENSE-data`）—— 需要署名、商业可用。
+
+## 已收录厂商
+
+| 厂商 | 覆盖面 | 状态 | 文章 |
+| --- | --- | --- | --- |
+| Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`docs/1-cloudflare.md`](./docs/1-cloudflare.md) |
+| 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`docs/2-aliyun.md`](./docs/2-aliyun.md) |
+| 腾讯云 | Cloud API 3.0 速率限制 | 待核实 | [`docs/3-tencent.md`](./docs/3-tencent.md) |
+| GitHub | REST + GraphQL + Actions + 二级限制 | 已核实 2024-11 | [`docs/4-github.md`](./docs/4-github.md) |
+| Vercel | 函数/Edge 配额 + REST API | 待核实 | [`docs/5-vercel.md`](./docs/5-vercel.md) |
+| BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`docs/6-bandwagonhost.md`](./docs/6-bandwagonhost.md) |
+
+## 一览表
+
+| 厂商 | 主要 API 限额 | 时间窗 | 响应头 |
+| --- | --- | --- | --- |
+| Cloudflare（REST） | 1200 次 | 5 分钟 / 用户 | `Retry-After`、`cf-mitigated` |
+| 阿里云（开放 API） | 100 QPS | 1 秒 / 用户 | 自定义 `Code` 字段，非 RFC 6585 |
+| 腾讯云（API 3.0） | 20 QPS | 1 秒 / 用户 | `X-RateLimit-*`、`Retry-After` |
+| GitHub REST（PAT） | 5000 次 | 1 小时 / token | `X-RateLimit-*`、`Retry-After` |
+| GitHub REST（未认证） | 60 次 | 1 小时 / IP | `X-RateLimit-*`、`Retry-After` |
+| GitHub GraphQL | 5000 点 | 1 小时 / token | `X-RateLimit-*`、`Retry-After` |
+| GitHub Search | 30 次 | 1 分钟 / 用户 | `X-RateLimit-*` |
+| Vercel REST | 1 次 | 1 秒 / token | 小写 `ratelimit-*`（RFC 9745 风格） |
+
+> ⚠️ 上表数字均待核实。每个 `data/<vendor>.yaml` 携带
+> `verified` 标记与官方文档链接；CI 抓取脚本会在每次发布时
+> 与上游重新比对。
+
+## 进一步阅读
+
+- **`data/<vendor>.yaml`** —— 机器可读，真源
+- **`docs/0-ratelimit-overview.md`** —— "如何使用本仓库"权威参考
+- **`docs/<n>-<vendor>.md`** —— 单厂商深度文章
+- **`RATELIMIT-RESEARCH.md`** —— 工作笔记（包含核实状态）
+
+## 协议
+
+- `LICENSE` —— Apache 2.0（代码、文章、脚本）
+- `LICENSE-data` —— CC-BY-4.0（`data/` 下的数据）
+
+## 贡献
+
+见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。欢迎外部 PR 修
+改数据、补充厂商、改文章；团队会对每次改动签字。

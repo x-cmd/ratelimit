@@ -1,0 +1,22 @@
+# rumdl config for x-cmd/ratelimit.
+#
+# Project conventions / quirks that need suppression:
+#
+# MD036 — bold (**xxx**) is used as in-section sub-labels after H2
+#   headings (e.g. "## Cloudflare" then "**Free plan**: ..."). This
+#   idiom is intentional and not a heading.
+#
+# MD041 — top-level docs (README.md, README.cn.md) deliberately
+#   skip the H1; the title is conveyed in the H2 navigation list
+#   at the top of the file. Same reason x-cmd/cve skips MD041.
+#
+# MD013 — long URLs (raw.githubusercontent.com fetch URLs, GnuPG
+#   man-page links) are common. Wrapping them makes the curl
+#   pipelines harder to copy.
+#
+# MD051 — anchors like `#how-to-verify-a-key` are referenced
+#   without auto-slug conversion; rumdl flags them as missing.
+#   Same pattern as x-cmd/cve.
+
+[global]
+disable = ["MD036", "MD041", "MD013", "MD051"]

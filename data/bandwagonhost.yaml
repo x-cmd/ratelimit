@@ -1,0 +1,91 @@
+vendor: BandwagonHost (BandwagonHost / IT7 Networks)
+slug: bandwagonhost
+api_base: null
+docs_source: https://bandwagonhost.com/
+verified: false
+last_verified: null
+
+# BandwagonHost is a VPS hosting provider, not a typical
+# API service. The "rate limit" concept applies differently
+# here — this entry covers connection-level and outbound
+# restrictions rather than per-endpoint API quotas.
+
+# Pricing context. Verify against bandwagonhost.com.
+pricing_notes:
+  - Source: https://bandwagonhost.com/cart.php
+  - All plans billed annually (most entry-level special offers
+    are 1-year, 2-year, or 3-year commitments).
+  - KVM VPS, 1 GB RAM, 20 GB SSD: $19.99 / yr (entry)
+  - KVM VPS, 2 GB RAM, 40 GB SSD: ~$33.99 / yr (verify)
+  - Datacenters: Los Angeles, Miami, Vancouver, Hong Kong,
+    Tokyo (selection varies).
+
+# Category: outbound-port restrictions.
+port_restrictions:
+  - surface: Outbound TCP/25 (SMTP)
+    limit: blocked
+    window: -
+    notes: |
+      BandwagonHost blocks outbound port 25 by default
+      on all VPS plans, per their TOS. Customers
+      needing SMTP egress must request unblocking
+      through support and justify the use case.
+      Standard spam-prevention policy. See
+      docs/6-bandwagonhost for the unblock process.
+
+# Category: bandwidth caps.
+bandwidth_limits:
+  - surface: Monthly outbound traffic
+    limit: 1000
+    window: GB / month
+    notes: |
+      Entry-level plans typically have 1 TB / month
+      outbound cap. Larger plans scale up.
+      Verify per-plan on the cart page.
+  - surface: Network port speed
+    limit: 1000
+    window: Mbps
+    notes: |
+      Most VPS plans offer 1 Gbps shared port;
+      some specialty plans offer 10 Gbps. Verify.
+
+# Category: connection concurrency (TCP).
+connection_limits:
+  - surface: Concurrent TCP connections per VPS
+    limit: varies
+    window: -
+    notes: |
+      Soft caps; depends on VPS plan and current
+      host load. Outbound SMTP / SSH / HTTP all
+      count. No published hard number per plan;
+      verify via support if you need an exact cap.
+
+# Category: control panel / API rate.
+# BandwagonHost doesn't publish a public API rate-limit
+# table; the client area is mostly manual. Their
+# internal API (used by the control panel) has
+# undocumented rate limits triggered by automation.
+control_panel_api:
+  - surface: Client area / control panel
+    limit: undocumented
+    window: -
+    notes: |
+      BandwagonHost's TOS discourages automated
+      API access to the client area; doing so
+      triggers manual review. For programmatic
+      control, use provider-issued API tokens
+      (when available per plan).
+
+# No published RateLimit-* headers — BandwagonHost doesn't
+# expose a programmatic API in the same way as the other
+# vendors covered here.
+header_conventions:
+  ratelimit_remaining: null
+  retry_after: null
+  notes: |
+    BandwagonHost is documented here for completeness
+    because the user wanted VPS-level limits tracked
+    too. The "rate limit" framing partially applies
+    (port 25 block, bandwidth caps, soft connection
+    caps); the per-endpoint API quota framing does not.
+    See docs/6-bandwagonhost.

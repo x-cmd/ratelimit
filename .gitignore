@@ -1,0 +1,14 @@
+# Python (data scrapers, validators, converters)
+__pycache__/
+*.pyc
+*.pyo
+
+# Scraped HTML cache (regenerated on demand by .x-cmd/scrape.py)
+.x-cmd/.scrape.cache/
+
+# Local scratch files
+*.bak
+
+# Editor scratch
+.DS_Store
+*.swp

@@ -1,0 +1,111 @@
+vendor: Cloudflare
+slug: cloudflare
+api_base: https://api.cloudflare.com/client/v4
+docs_source: https://developers.cloudflare.com/fundamentals/api/reference/limits/
+verified: false
+last_verified: null
+
+# Pricing context. Verify against cloudflare.com/plans.
+# Pricing shown is monthly USD as of training data; treat as a
+# rough reference, not a quote.
+pricing_notes:
+  - Source: https://www.cloudflare.com/plans
+  - Free: $0/mo
+  - Pro: ~$25/mo (verify)
+  - Business: ~$250/mo (verify)
+  - Enterprise: custom
+
+plans:
+  - name: Free
+    api_rate_limit:
+      surface: REST API (most endpoints)
+      limit: 1200
+      window: 5 min
+      per: user
+      notes: |
+        Most Cloudflare REST endpoints share this quota.
+        GET /zones/:id is among the exceptions with
+        higher per-endpoint limits.
+    product_limits:
+      - surface: HTTP requests (zone)
+        limit: 100000
+        window: day
+        notes: |
+          Total HTTP requests served by the zone, all
+          features combined. Email obfuscation and other
+          features count against this cap.
+      - surface: Workers requests
+        limit: 100000
+        window: day
+        notes: |
+          Free-tier Workers, including cron triggers.
+          KV operations count separately.
+      - surface: Pages requests
+        limit: unlimited
+        window: -
+        notes: |
+          Free Pages are unlimited; bandwidth is the
+          constraint (see Cloudflare's published table).
+    rate_limit_headers:
+      ratelimit_remaining: null
+      notes: |
+        Cloudflare's API does not consistently emit
+        RateLimit-* headers. Watch for 429 responses
+        with Retry-After.
+
+  - name: Pro
+    api_rate_limit:
+      surface: REST API (most endpoints)
+      limit: 1200
+      window: 5 min
+      per: user
+      notes: |
+        Same per-user API quota as Free; the
+        differentiation is product-level request caps.
+    product_limits:
+      - surface: HTTP requests (zone)
+        limit: 10000000
+        window: month
+        notes: |
+          "10M / month" is the published Pro figure;
+          verify against current plan page.
+    rate_limit_headers:
+      ratelimit_remaining: null
+
+  - name: Business
+    api_rate_limit:
+      surface: REST API (most endpoints)
+      limit: 1200
+      window: 5 min
+      per: user
+      notes: |
+        Same per-user API quota; higher product limits.
+    product_limits:
+      - surface: HTTP requests (zone)
+        limit: 100000000
+        window: month
+        notes: "Verify against the live plan page."
+    rate_limit_headers:
+      ratelimit_remaining: null
+
+  - name: Enterprise
+    api_rate_limit:
+      surface: REST API (most endpoints)
+      limit: custom
+      window: custom
+      per: user
+      notes: |
+        Custom negotiated quotas. Contact Cloudflare
+        account team for actual numbers.
+
+# Surface-level rate-limit headers (informational; not all
+# endpoints emit all of them).
+header_conventions:
+  ratelimit_remaining: null
+  retry_after: Retry-After
+  cf_mitigated: cf-mitigated
+  notes: |
+    `cf-mitigated` is set when Cloudflare served a
+    challenge/captcha in response to detected abuse —
+    distinct from the API rate limit; covered separately
+    in docs/1-cloudflare.

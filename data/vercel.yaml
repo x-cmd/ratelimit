@@ -1,0 +1,120 @@
+vendor: Vercel
+slug: vercel
+api_base: https://api.vercel.com
+docs_source: https://vercel.com/docs/concepts/limits/overview
+verified: false
+last_verified: null
+
+# Pricing context. Verify against vercel.com/pricing.
+pricing_notes:
+  - Source: https://vercel.com/pricing
+  - Hobby: $0 / mo (with usage caps)
+  - Pro: $20 / user / mo + usage
+  - Enterprise: custom
+
+plans:
+  - name: Hobby (free)
+    product_limits:
+      - surface: Serverless function executions
+        limit: 100
+        window: GB-hr / month
+        notes: |
+          "GB-hours" = memory × execution time ×
+          invocations. Caps both memory ceiling and
+          wall-clock time per invocation.
+      - surface: Serverless function timeout (default)
+        limit: 10
+        window: seconds
+        notes: |
+          Configurable per-project up to 300s on Pro,
+          900s on Enterprise.
+      - surface: Edge function invocations
+        limit: 500000
+        window: month
+        notes: |
+          Edge Functions are V8 isolates, distinct
+          from Serverless/Node.js Functions.
+      - surface: Edge function code size
+        limit: 1
+        window: MB
+        notes: |
+          Edge Function compressed bundle ceiling.
+      - surface: Bandwidth (Fast Data Transfer)
+        limit: 100
+        window: GB / month
+        notes: |
+          Outbound data transfer to end users.
+      - surface: Build minutes
+        limit: 100
+        window: month
+        notes: |
+          CI/CD build execution time.
+      - surface: Deployments
+        limit: 100
+        window: day
+        notes: |
+          Production deployments. Preview deploys
+          are unlimited.
+    api_rate_limit:
+      surface: Vercel REST API
+      limit: 1
+      window: second
+      per: token
+      notes: |
+        Most Vercel REST endpoints default to 1 RPS
+        per token. Some batched endpoints allow higher.
+
+  - name: Pro
+    product_limits:
+      - surface: Serverless function executions
+        limit: 1000
+        window: GB-hr / month
+        notes: |
+          10× the Hobby limit.
+      - surface: Serverless function timeout
+        limit: 60
+        window: seconds
+        notes: |
+          Default. Configurable up to 900s on Enterprise.
+      - surface: Edge function invocations
+        limit: 5000000
+        window: month
+        notes: |
+          10× the Hobby limit.
+      - surface: Edge function code size
+        limit: 4
+        window: MB
+        notes: |
+          4× the Hobby limit.
+      - surface: Bandwidth
+        limit: 1
+        window: TB / month
+        notes: |
+          10× the Hobby limit.
+      - surface: Build minutes
+        limit: 400
+        window: month
+        notes: |
+          4× the Hobby limit.
+      - surface: Deployments
+        limit: 3000
+        window: day
+        notes: |
+          30× the Hobby limit. Production deploys.
+    api_rate_limit:
+      surface: Vercel REST API
+      limit: 1
+      window: second
+      per: token
+      notes: |
+        Same default as Hobby; higher via dedicated
+        token types / plans.
+
+# Surface-level rate-limit headers.
+header_conventions:
+  ratelimit_remaining: x-ratelimit-remaining
+  ratelimit_limit: x-ratelimit-limit
+  retry_after: Retry-After
+  notes: |
+    Vercel's API uses lowercase RateLimit-* headers
+    per the IETF draft (RFC 9745).

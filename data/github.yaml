@@ -1,0 +1,106 @@
+vendor: GitHub
+slug: github
+api_base: https://api.github.com
+docs_source: https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
+verified: true
+last_verified: 2024-11
+
+# Pricing context. Verify against github.com/pricing.
+pricing_notes:
+  - Source: https://github.com/pricing
+  - Free: $0 / user / mo
+  - Team: $4 / user / mo
+  - Enterprise Cloud: $21 / user / mo
+
+# Primary rate limits — REST API.
+plans:
+  - name: Unauthenticated (REST)
+    api_rate_limit:
+      surface: REST API, no auth
+      limit: 60
+      window: hour
+      per: IP
+      notes: |
+        Per source IP. Counting on `X-RateLimit-*`
+        headers is the canonical way to monitor.
+
+  - name: Authenticated via PAT (REST)
+    api_rate_limit:
+      surface: REST API, personal access token
+      limit: 5000
+      window: hour
+      per: token
+      notes: |
+        Personal access tokens count against the token
+        owner; OAuth apps and GitHub Apps follow
+        different rules.
+
+  - name: GitHub App (user-to-server)
+    api_rate_limit:
+      surface: REST API, GitHub App
+      limit: 5000
+      window: hour
+      per: installation
+      notes: |
+        Counts against the *installation*, not the
+        user; more granular than PAT-based quotas.
+
+  - name: GitHub App (server-to-server)
+    api_rate_limit:
+      surface: REST API, server-to-server token
+      limit: 5000
+      window: hour
+      per: installation
+      notes: |
+        Same ceiling as user-to-server. The
+        difference is in the auth flow.
+
+  - name: GraphQL (any auth)
+    api_rate_limit:
+      surface: GraphQL API
+      limit: 5000
+      window: hour
+      per: token-or-installation
+      notes: |
+        Cost-based: each query consumes 1–10 points
+        depending on field cost. Use `cost` field in
+        response to track.
+
+  - name: Search API (authenticated)
+    api_rate_limit:
+      surface: /search/* endpoints
+      limit: 30
+      window: minute
+      per: user
+      notes: |
+        Lower because search is expensive. The REST
+        5000/hr quota does NOT cover /search/*.
+
+  - name: Actions API
+    api_rate_limit:
+      surface: REST API under /repos/{owner}/{repo}/actions
+      limit: 1000
+      window: hour
+      per: repository
+      notes: |
+        Workflow run artifacts and the Actions API
+        share this quota.
+
+# Secondary rate limit (heuristic, not a fixed number).
+secondary_rate_limit:
+  description: |
+    GitHub's "secondary" rate limit is heuristic —
+    triggered by abuse-like burst patterns rather than a
+    fixed quota. Responses include `Retry-After`.
+    See docs/4-github for the trigger patterns.
+
+# Headers GitHub emits.
+header_conventions:
+  ratelimit_remaining: X-RateLimit-Remaining
+  ratelimit_limit: X-RateLimit-Limit
+  ratelimit_reset: X-RateLimit-Reset
+  retry_after: Retry-After
+  notes: |
+    `X-RateLimit-Reset` is a UNIX epoch timestamp, NOT
+    seconds-until-reset. This trips up a lot of
+    first-time consumers.

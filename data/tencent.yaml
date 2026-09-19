@@ -1,0 +1,55 @@
+vendor: 腾讯云 (Tencent Cloud)
+slug: tencent
+api_base: https://<product>.<region>.tencentcloudapi.com
+docs_source: https://cloud.tencent.com/document/product/301/30495
+verified: false
+last_verified: null
+
+# Pricing context. Verify against cloud.tencent.com/pricing.
+pricing_notes:
+  - Source: https://cloud.tencent.com/pricing
+  - Most APIs are pay-as-you-go per call.
+  - Subscription / 月费 plans available for CVM, CDB, COS, etc.
+  - New-account free trial quotas exist per product.
+
+plans:
+  - name: Default (cloud API 3.0)
+    api_rate_limit:
+      surface: Most cloud APIs
+      limit: 20
+      window: second
+      per: user
+      notes: |
+        Default per-user QPS for the cloud API 3.0
+        endpoint family. Some product APIs publish
+        higher limits (50–100 QPS for major products
+        like CVM / CDB). Use `DescribeApiRateLimit`
+        to programmatically read your current quota.
+    product_limits:
+      - surface: CVM (云服务器)
+        limit: varies
+        window: second
+        per: user
+        notes: |
+          Verify against the CVM API rate-limit docs;
+          the value has historically been in the
+          50–100 QPS range.
+    rate_limit_headers:
+      ratelimit_remaining: X-RateLimit-Remaining
+      retry_after: Retry-After
+      notes: |
+        Tencent Cloud API rate-limit headers: X-
+        RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Window. See docs/3-tencent.
+
+# Surface-level rate-limit headers (informational; not all
+# endpoints emit all of them).
+header_conventions:
+  ratelimit_remaining: X-RateLimit-Remaining
+  ratelimit_limit: X-RateLimit-Limit
+  ratelimit_window: X-RateLimit-Window
+  retry_after: Retry-After
+  notes: |
+    Tencent's headers are the closest match to the
+    draft IETF RateLimit-* headers among the Chinese
+    cloud providers covered here.

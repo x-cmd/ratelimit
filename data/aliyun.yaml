@@ -1,0 +1,53 @@
+vendor: 阿里云 (Aliyun)
+slug: aliyun
+api_base: https://<product>.<region>.aliyuncs.com
+docs_source: https://help.aliyun.com/document_detail/146726.html
+verified: false
+last_verified: null
+
+# Pricing context. Verify against aliyun.com/pricing.
+pricing_notes:
+  - Source: https://www.aliyun.com/price
+  - Most APIs are pay-as-you-go per call.
+  - Subscription / 包年包月 plans available for ECS, RDS, etc.
+  - Most products have a free trial quota; e.g., ECS 1-month
+    trial for new accounts, CDN 10GB / month free.
+
+plans:
+  - name: Default (open API)
+    api_rate_limit:
+      surface: Most open APIs
+      limit: 100
+      window: second
+      per: user
+      notes: |
+        Default per-user QPS across most Aliyun open
+        APIs. Some APIs publish a lower default
+        (e.g., ECS Create* APIs may default to 60/min
+        for CreateInstance specifically).
+    product_limits:
+      - surface: RAM (users / groups)
+        limit: varies
+        window: varies
+        notes: |
+          RAM API rate is product-specific. Verify
+          against the relevant product's API rate-limit
+          docs.
+    rate_limit_headers:
+      ratelimit_remaining: null
+      notes: |
+        Aliyun's open API uses its own error-code
+        scheme (Throttling.User / Throttling.Api /
+        Throttling.CloudBox) rather than RFC 6585 429
+        semantics. See docs/2-aliyun.
+
+# Surface-level rate-limit headers (informational; not all
+# endpoints emit all of them).
+header_conventions:
+  ratelimit_remaining: null
+  retry_after: null
+  x_ratelimit: null
+  notes: |
+    Aliyun does NOT emit standard RateLimit-* headers
+    on most APIs. Error responses use a custom
+    `Code` field that consumers parse. See docs/2-aliyun.
