@@ -161,3 +161,17 @@ Three rules of thumb:
 
 These are different layers; see Cloudflare's docs for
 each.
+
+## Sources
+
+- REST API per-user limits:
+  <https://developers.cloudflare.com/fundamentals/api/reference/limits/>
+- Per-product HTTP caps:
+  - Workers: <https://developers.cloudflare.com/workers/platform/limits/>
+  - KV: <https://developers.cloudflare.com/kv/platform/limits/>
+  - R2: <https://developers.cloudflare.com/r2/platform/limits/>
+  - D1: <https://developers.cloudflare.com/d1/platform/limits/>
+- Free / Pro / Business / Enterprise pricing:
+  <https://www.cloudflare.com/plans>
+- `cf-mitigated` (WAF / abuse-detection semantics):
+  <https://developers.cloudflare.com/fundamentals/reference/protections/>

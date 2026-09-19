@@ -114,3 +114,13 @@ flag.
 - [`SKILL.md`](../../SKILL.md) — AI-agent recipes.
 - [`CONTRIBUTING.md`](../../CONTRIBUTING.md) — how to
   contribute a new vendor or correct an existing entry.
+
+## Sources
+
+This article references the per-vendor sources listed in each
+of articles 1–7. Cross-vendor standards:
+
+- IETF RFC 9745 (RateLimit-* header draft, finalized 2024):
+  <https://datatracker.ietf.org/doc/rfc9745/>
+- RFC 6585 (Retry-After origin):
+  <https://datatracker.ietf.org/doc/html/rfc6585>

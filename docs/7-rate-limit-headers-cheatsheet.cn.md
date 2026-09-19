@@ -80,3 +80,17 @@ Vercel 最贴近这种格式（小写 `ratelimit-*` 响应头按端点）。
 "无响应头、自定义 `Code` 字段"是最容易忘的，直到被咬一口。
 上表的速查是任何宣称"多厂商速率限制支持"的客户端库必须测试
 通过的最小覆盖面。
+
+## 来源
+
+- IETF RFC 9745（RateLimit-* 头标准，2024 定稿）：
+  <https://datatracker.ietf.org/doc/rfc9745/>
+- RFC 6585（Retry-After 出处）：
+  <https://datatracker.ietf.org/doc/html/rfc6585>
+- IETF draft（历史）：
+  <https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/>
+- 跨厂商对比表的各厂商数据来源：见文章 1（Cloudflare）、
+  2（阿里云）、3（腾讯云）、4（GitHub）、5（Vercel）、
+  6（BandwagonHost）。
+
+**核实状态**：基于标准，稳定。

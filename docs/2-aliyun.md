@@ -128,3 +128,16 @@ Three things to watch:
 - RAM API limits: see RAM product docs
 
 Specific numbers need CI scraper to write to `data/aliyun.yaml`.
+
+## Sources
+
+- General OpenAPI rate-limit doc:
+  <https://help.aliyun.com/document_detail/146726.html>
+- ECS API rate limits:
+  <https://help.aliyun.com/document_detail/25485.html>
+- RAM API limits: see RAM product doc index
+  <https://help.aliyun.com/product/28625.html>
+- CDN refresh / prefetch limits:
+  <https://help.aliyun.com/document_detail/27256.html>
+- Error code reference (`Throttling.*`):
+  <https://help.aliyun.com/document_detail/315526.html>

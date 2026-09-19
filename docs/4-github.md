@@ -213,3 +213,20 @@ Three rules of thumb:
    `X-RateLimit-Remaining` is authoritative but you don't
    need to make a request just to find out — store the
    counter locally and decrement on each request.
+
+## Sources
+
+- Primary REST rate limits:
+  <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
+- GraphQL resource limits:
+  <https://docs.github.com/en/graphql/overview/resource-limitations>
+- Search API rate limits:
+  <https://docs.github.com/en/rest/search>
+- Actions API:
+  <https://docs.github.com/en/rest/actions>
+- Secondary rate-limit blog post (trigger patterns):
+  <https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>
+- GitHub Apps auth model:
+  <https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app>
+
+**Verification status**: verified 2024-11 against the above.

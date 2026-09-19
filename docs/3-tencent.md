@@ -136,3 +136,16 @@ Three notes:
 
 Specific numbers need CI scraper to write to
 `data/tencent.yaml`.
+
+## Sources
+
+- General Cloud API 3.0 rate-limit doc:
+  <https://cloud.tencent.com/document/product/301/30495>
+- `DescribeApiRateLimit` API reference:
+  <https://cloud.tencent.com/document/api/306/7234>
+- Per-product rate limits (look in each product's API doc
+  under "调用限制" or "使用限制"):
+  - CVM: <https://cloud.tencent.com/document/product/213>
+  - CDB: <https://cloud.tencent.com/document/product/236>
+  - COS: <https://cloud.tencent.com/document/product/436>
+  - VPC: <https://cloud.tencent.com/document/product/215>

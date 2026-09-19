@@ -194,3 +194,20 @@ def call_github(url, headers, max_retries=5):
 3. **本地按 token 跟踪预算。** GitHub 的 `X-RateLimit-
    Remaining` 是权威但你不必为查它发请求 —— 本地记数器
    减 1 即可，省掉"启动时我的配额是多少？"这个引导难题。
+
+## 来源
+
+- 主 REST 速率限制：
+  <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
+- GraphQL 资源限制：
+  <https://docs.github.com/en/graphql/overview/resource-limitations>
+- 搜索 API 速率限制：
+  <https://docs.github.com/en/rest/search>
+- Actions API：
+  <https://docs.github.com/en/rest/actions>
+- 二级速率限制触发模式（GitHub 博客）：
+  <https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>
+- GitHub App 认证模型：
+  <https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app>
+
+**核实状态**：2024-11 与上述来源比对核实。

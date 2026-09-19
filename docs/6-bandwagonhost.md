@@ -1,6 +1,6 @@
 ---
 x-title: BandwagonHost rate limits — VPS port, bandwidth, and connection caps
-x-desc: BandwagonHost's VPS-level rate-limit equivalents: outbound port 25 (SMTP) blocked by default, monthly bandwidth caps, network port speed, soft connection concurrency limits, and the absence of a public API rate-limit table.
+x-desc: "BandwagonHost's VPS-level rate-limit equivalents: outbound port 25 (SMTP) blocked by default, monthly bandwidth caps, network port speed, soft connection concurrency limits, and the absence of a public API rate-limit table."
 x-sidebar: BandwagonHost rate limits
 x-keywords: bandwagonhost, vps, port 25, smtp bandwidth, connection limit, it7 networks
 x-json-ld:
@@ -116,3 +116,21 @@ This article does not cover:
 
 These are different concerns; see BandwagonHost's TOS
 and plan comparison for details.
+
+## Sources
+
+- Terms of service (port 25 block, bandwidth caps, TOS
+  enforcement):
+  <https://bandwagonhost.com/terms.php>
+- Plans and pricing (per-tier bandwidth caps, port speed):
+  <https://bandwagonhost.com/cart.php>
+- Network and datacenter info:
+  <https://bandwagonhost.com/>
+- SolusVM API (control panel backend) — third-party docs:
+  <https://docs.solusvm.com/>
+- IT7 Networks (parent company):
+  <https://www.it7.net/>
+
+**Verification status**: pending CI scraper. Port 25 block
+and bandwidth caps are TOS-derived; per-plan numbers must
+be cross-checked against the live cart page.

@@ -127,3 +127,15 @@ def call_tencent(url, headers, max_retries=5):
 - `DescribeApiRateLimit`：[cloud.tencent.com/document/api/306/7234](https://cloud.tencent.com/document/api/306/7234)
 
 具体数字需 CI scraper 抓取后写入 `data/tencent.yaml`。
+
+## 来源
+
+- 通用 Cloud API 3.0 速率限制文档：
+  <https://cloud.tencent.com/document/product/301/30495>
+- `DescribeApiRateLimit` API 参考：
+  <https://cloud.tencent.com/document/api/306/7234>
+- 各产品速率限制（在各产品 API 文档的"调用限制"或"使用限制"段）：
+  - CVM：<https://cloud.tencent.com/document/product/213>
+  - CDB：<https://cloud.tencent.com/document/product/236>
+  - COS：<https://cloud.tencent.com/document/product/436>
+  - VPC：<https://cloud.tencent.com/document/product/215>

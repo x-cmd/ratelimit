@@ -142,3 +142,16 @@ for compute-heavy paths (image processing, PDF generation).
 - Log retention quotas.
 
 These are different topics; see Vercel docs.
+
+## Sources
+
+- Limits overview (function / Edge / bandwidth / build / deploy):
+  <https://vercel.com/docs/concepts/limits/overview>
+- REST API:
+  <https://vercel.com/docs/rest-api>
+- Pricing:
+  <https://vercel.com/pricing>
+- Vercel Edge Functions runtime:
+  <https://vercel.com/docs/functions/edge-functions>
+- Serverless Functions:
+  <https://vercel.com/docs/functions/serverless-functions>

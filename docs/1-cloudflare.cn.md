@@ -141,3 +141,17 @@ def call_cloudflare(url, token, max_retries=5):
   不是 Cloudflare 账户级）
 
 这些都是不同的话题；见 Cloudflare 对应文档。
+
+## 来源
+
+- REST API 每用户限流：
+  <https://developers.cloudflare.com/fundamentals/api/reference/limits/>
+- 各产品 HTTP 配额：
+  - Workers：<https://developers.cloudflare.com/workers/platform/limits/>
+  - KV：<https://developers.cloudflare.com/kv/platform/limits/>
+  - R2：<https://developers.cloudflare.com/r2/platform/limits/>
+  - D1：<https://developers.cloudflare.com/d1/platform/limits/>
+- Free / Pro / Business / Enterprise 套餐价格：
+  <https://www.cloudflare.com/plans>
+- `cf-mitigated`（WAF / 滥用检测语义）：
+  <https://developers.cloudflare.com/fundamentals/reference/protections/>

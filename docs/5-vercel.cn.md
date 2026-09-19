@@ -131,3 +131,16 @@ Serverless Functions 适合算力密集型路径（图片处理、PDF 生成）�
 - 日志保留配额
 
 都是不同话题；见 Vercel 文档。
+
+## 来源
+
+- 上限总览（函数 / Edge / 带宽 / 构建 / 部署）：
+  <https://vercel.com/docs/concepts/limits/overview>
+- REST API：
+  <https://vercel.com/docs/rest-api>
+- 价格：
+  <https://vercel.com/pricing>
+- Vercel Edge Functions 运行时：
+  <https://vercel.com/docs/functions/edge-functions>
+- Serverless Functions：
+  <https://vercel.com/docs/functions/serverless-functions>

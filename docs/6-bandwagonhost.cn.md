@@ -1,6 +1,6 @@
 ---
 x-title: BandwagonHost 速率限制 —— VPS 端口、带宽、连接上限
-x-desc: BandwagonHost 的 VPS 级速率等价物：默认屏蔽出站 25 端口（SMTP）、月带宽上限、网卡速率、软连接并发上限；以及缺乏公开 API 速率表这件事。
+x-desc: "BandwagonHost 的 VPS 级速率等价物：默认屏蔽出站 25 端口（SMTP）、月带宽上限、网卡速率、软连接并发上限；以及缺乏公开 API 速率表这件事。"
 x-sidebar: BandwagonHost 速率限制
 x-keywords: bandwagonhost, vps, 端口 25, smtp 带宽, 连接上限, it7 networks
 x-json-ld:
@@ -92,3 +92,19 @@ API 速率限制，但**不公开**且**不鼓励自动化**。他们的 TOS 明
 - 存储 I/O 限制（视套餐）
 
 这些是不同话题；见 BandwagonHost TOS 与套餐对比页。
+
+## 来源
+
+- 服务条款（端口 25 屏蔽、带宽上限、TOS 强制执行）：
+  <https://bandwagonhost.com/terms.php>
+- 套餐与价格（每档带宽上限、网卡速率）：
+  <https://bandwagonhost.com/cart.php>
+- 网络与数据中心信息：
+  <https://bandwagonhost.com/>
+- SolusVM API（控制面板后端）—— 第三方文档：
+  <https://docs.solusvm.com/>
+- IT7 Networks（母公司）：
+  <https://www.it7.net/>
+
+**核实状态**：待 CI scraper。端口 25 屏蔽与带宽上限源自
+TOS；每套餐具体数字需与实时购物车页面比对。

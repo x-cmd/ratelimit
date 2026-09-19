@@ -93,3 +93,17 @@ is the easiest to forget until it bites you. The cheat
 sheet above is the minimum surface area to test against in
 any client library that claims "multi-vendor rate-limit
 support".
+
+## Sources
+
+- IETF RFC 9745 (RateLimit-* header standard, finalized 2024):
+  <https://datatracker.ietf.org/doc/rfc9745/>
+- RFC 6585 (Retry-After origin):
+  <https://datatracker.ietf.org/doc/html/rfc6585>
+- IETF draft (historical):
+  <https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/>
+- Per-vendor sources for the cross-reference table: see articles
+  1 (Cloudflare), 2 (Aliyun), 3 (Tencent), 4 (GitHub), 5 (Vercel),
+  6 (BandwagonHost).
+
+**Verification status**: standards-based, stable.

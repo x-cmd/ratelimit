@@ -120,3 +120,16 @@ def call_aliyun(action, params, ak, sk):
 - RAM 限流：见 RAM 产品文档的"API 调用限制"段落
 
 具体数字需 CI scraper 抓取后写入 `data/aliyun.yaml`。
+
+## 来源
+
+- 通用 OpenAPI 速率限制文档：
+  <https://help.aliyun.com/document_detail/146726.html>
+- ECS API 速率限制：
+  <https://help.aliyun.com/document_detail/25485.html>
+- RAM API 限制：见 RAM 产品文档索引
+  <https://help.aliyun.com/product/28625.html>
+- CDN 刷新 / 预热限制：
+  <https://help.aliyun.com/document_detail/27256.html>
+- 错误码参考（`Throttling.*`）：
+  <https://help.aliyun.com/document_detail/315526.html>

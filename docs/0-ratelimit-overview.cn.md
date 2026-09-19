@@ -90,3 +90,12 @@ CI scraper 第一次跑完后由团队手动切换。
   工作笔记，含核实状态。
 - [`SKILL.md`](../../SKILL.md) —— AI agent 用法。
 - [`CONTRIBUTING.md`](../../CONTRIBUTING.md) —— 贡献流程。
+
+## 来源
+
+本文引用的数据来源详见文章 1–7 各厂商段。跨厂商标准：
+
+- IETF RFC 9745（RateLimit-* 头标准，2024 定稿）：
+  <https://datatracker.ietf.org/doc/rfc9745/>
+- RFC 6585（Retry-After 出处）：
+  <https://datatracker.ietf.org/doc/html/rfc6585>
