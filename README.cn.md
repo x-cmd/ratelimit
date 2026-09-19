@@ -21,12 +21,12 @@
 
 | 厂商 | 覆盖面 | 状态 | 文章 |
 | --- | --- | --- | --- |
-| Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`docs/1-cloudflare.md`](./docs/1-cloudflare.md) |
-| 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`docs/2-aliyun.md`](./docs/2-aliyun.md) |
-| 腾讯云 | Cloud API 3.0 速率限制 | 待核实 | [`docs/3-tencent.md`](./docs/3-tencent.md) |
-| GitHub | REST + GraphQL + Actions + 二级限制 | 已核实 2024-11 | [`docs/4-github.md`](./docs/4-github.md) |
-| Vercel | 函数/Edge 配额 + REST API | 待核实 | [`docs/5-vercel.md`](./docs/5-vercel.md) |
-| BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`docs/6-bandwagonhost.md`](./docs/6-bandwagonhost.md) |
+| Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`docs/1-cloudflare.en.md`](./docs/1-cloudflare.en.md) |
+| 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`docs/2-aliyun.en.md`](./docs/2-aliyun.en.md) |
+| 腾讯云 | Cloud API 3.0 速率限制 | 待核实 | [`docs/3-tencent.en.md`](./docs/3-tencent.en.md) |
+| GitHub | REST + GraphQL + Actions + 二级限制 | 已核实 2024-11 | [`docs/4-github.en.md`](./docs/4-github.en.md) |
+| Vercel | 函数/Edge 配额 + REST API | 待核实 | [`docs/5-vercel.en.md`](./docs/5-vercel.en.md) |
+| BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`docs/6-bandwagonhost.en.md`](./docs/6-bandwagonhost.en.md) |
 
 ## 一览表
 
@@ -48,7 +48,7 @@
 ## 进一步阅读
 
 - **`data/<vendor>.yaml`** —— 机器可读，真源
-- **`docs/0-ratelimit-overview.md`** —— "如何使用本仓库"权威参考
+- **`docs/0-ratelimit-overview.en.md`** —— "如何使用本仓库"权威参考
 - **`docs/<n>-<vendor>.md`** —— 单厂商深度文章
 - **`RATELIMIT-RESEARCH.md`** —— 工作笔记（包含核实状态）
 

@@ -26,12 +26,12 @@ canonical site at `x-cmd.com/ratelimit`).
 
 | Vendor | Surface covered | Status | Article |
 | --- | --- | --- | --- |
-| Cloudflare | REST API + per-product HTTP caps | unverified | [`docs/1-cloudflare.md`](./docs/1-cloudflare.md) |
-| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`docs/2-aliyun.md`](./docs/2-aliyun.md) |
-| 腾讯云 (Tencent Cloud) | Cloud API 3.0 rate limits | unverified | [`docs/3-tencent.md`](./docs/3-tencent.md) |
-| GitHub | REST + GraphQL + Actions + secondary limits | verified 2024-11 | [`docs/4-github.md`](./docs/4-github.md) |
-| Vercel | Function/edge quotas + REST API | unverified | [`docs/5-vercel.md`](./docs/5-vercel.md) |
-| BandwagonHost | VPS-level port / bandwidth / connection caps | unverified | [`docs/6-bandwagonhost.md`](./docs/6-bandwagonhost.md) |
+| Cloudflare | REST API + per-product HTTP caps | unverified | [`docs/1-cloudflare.en.md`](./docs/1-cloudflare.en.md) |
+| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`docs/2-aliyun.en.md`](./docs/2-aliyun.en.md) |
+| 腾讯云 (Tencent Cloud) | Cloud API 3.0 rate limits | unverified | [`docs/3-tencent.en.md`](./docs/3-tencent.en.md) |
+| GitHub | REST + GraphQL + Actions + secondary limits | verified 2024-11 | [`docs/4-github.en.md`](./docs/4-github.en.md) |
+| Vercel | Function/edge quotas + REST API | unverified | [`docs/5-vercel.en.md`](./docs/5-vercel.en.md) |
+| BandwagonHost | VPS-level port / bandwidth / connection caps | unverified | [`docs/6-bandwagonhost.en.md`](./docs/6-bandwagonhost.en.md) |
 
 ## At a glance
 
@@ -55,7 +55,7 @@ canonical site at `x-cmd.com/ratelimit`).
 
 - **`data/<vendor>.yaml`** — machine-readable, the source
   of truth.
-- **`docs/0-ratelimit-overview.md`** — the canonical
+- **`docs/0-ratelimit-overview.en.md`** — the canonical
   "how to use this repo" article.
 - **`docs/<n>-<vendor>.md`** — per-vendor deep dive.
 - **`RATELIMIT-RESEARCH.md`** — working notes, including

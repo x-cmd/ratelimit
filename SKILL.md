@@ -37,17 +37,17 @@ grep -rE 'surface:' data/ | sort -u | head -30
 Each vendor has its own article under `docs/<n>-<vendor>.md`
 (matching the `x-cmd/cve` article pattern):
 
-- [`docs/1-cloudflare.md`](./docs/1-cloudflare.md) — REST API
+- [`docs/1-cloudflare.en.md`](./docs/1-cloudflare.en.md) — REST API
   quota, per-product HTTP caps, `cf-mitigated` vs 429.
-- [`docs/2-aliyun.md`](./docs/2-aliyun.md) — open API per-user
+- [`docs/2-aliyun.en.md`](./docs/2-aliyun.en.md) — open API per-user
   QPS, the `Throttling.*` error code scheme.
-- [`docs/3-tencent.md`](./docs/3-tencent.md) — Cloud API 3.0,
+- [`docs/3-tencent.en.md`](./docs/3-tencent.en.md) — Cloud API 3.0,
   `X-RateLimit-*` headers, `DescribeApiRateLimit`.
-- [`docs/4-github.md`](./docs/4-github.md) — REST + GraphQL +
+- [`docs/4-github.en.md`](./docs/4-github.en.md) — REST + GraphQL +
   Actions + Search + secondary rate limits, header semantics.
-- [`docs/5-vercel.md`](./docs/5-vercel.md) — Function / Edge
+- [`docs/5-vercel.en.md`](./docs/5-vercel.en.md) — Function / Edge
   Function quotas, REST API 1 RPS default, RFC 9745 headers.
-- [`docs/6-bandwagonhost.md`](./docs/6-bandwagonhost.md) — VPS
+- [`docs/6-bandwagonhost.en.md`](./docs/6-bandwagonhost.en.md) — VPS
   port 25 block, bandwidth caps, connection limits; not an
   API-rate-limit story in the usual sense.
 
@@ -61,7 +61,7 @@ yq '.plans[0].product_limits[] | select(.surface | contains("HTTP"))' data/cloud
 yq '.header_conventions' data/github.yaml
 
 # Aliyun's non-standard error-code scheme
-grep -A 5 "Throttling" docs/2-aliyun.md
+grep -A 5 "Throttling" docs/2-aliyun.en.md
 ```
 
 ## Schema (per `data/<vendor>.yaml`)

@@ -32,14 +32,14 @@ External PRs are welcome for:
 │   ├── vercel.yaml
 │   └── bandwagonhost.yaml
 ├── docs/                   ← long-form articles (served at x-cmd.com/ratelimit)
-│   ├── 0-ratelimit-overview.{md,cn.md,llms.md,faq.yml}
-│   ├── 1-cloudflare.{md,cn.md,llms.md,faq.yml}
-│   ├── 2-aliyun.{md,cn.md,llms.md,faq.yml}
-│   ├── 3-tencent.{md,cn.md,llms.md,faq.yml}
-│   ├── 4-github.{md,cn.md,llms.md,faq.yml}
-│   ├── 5-vercel.{md,cn.md,llms.md,faq.yml}
-│   ├── 6-bandwagonhost.{md,cn.md,llms.md,faq.yml}
-│   └── 7-rate-limit-headers-cheatsheet.{md,cn.md,llms.md,faq.yml}
+│   ├── 0-ratelimit-overview.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 1-cloudflare.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 2-aliyun.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 3-tencent.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 4-github.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 5-vercel.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 6-bandwagonhost.{en.md,cn.md,llms.md,faq.yml}
+│   └── 7-rate-limit-headers-cheatsheet.{en.md,cn.md,llms.md,faq.yml}
 └── .github/
     └── workflows/
         └── (scrape.yml will go here)
@@ -120,7 +120,7 @@ the team cross-checks are very welcome.
 
 - [`RATELIMIT-RESEARCH.md`](./RATELIMIT-RESEARCH.md) — current
   verification status per vendor.
-- [`docs/0-ratelimit-overview.md`](./docs/0-ratelimit-overview.md) —
+- [`docs/0-ratelimit-overview.en.md`](./docs/0-ratelimit-overview.en.md) —
   how to use this repo end-to-end.
 - [`SKILL.md`](./SKILL.md) — AI-agent recipes.
 

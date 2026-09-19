@@ -39,13 +39,13 @@ x-json-ld:
 
 | 厂商 | 覆盖面 | 状态 | 文章 |
 | --- | --- | --- | --- |
-| Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`1-cloudflare`](./1-cloudflare.md) |
-| 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`2-aliyun`](./2-aliyun.md) |
-| 腾讯云 | Cloud API 3.0 | 待核实 | [`3-tencent`](./3-tencent.md) |
-| GitHub | REST + GraphQL + Actions + 二级 | 已核实 2024-11 | [`4-github`](./4-github.md) |
-| Vercel | 函数/Edge + REST API | 待核实 | [`5-vercel`](./5-vercel.md) |
-| BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`6-bandwagonhost`](./6-bandwagonhost.md) |
-| 跨厂商 | HTTP 速率响应头、backoff | n/a | [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.md) |
+| Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`1-cloudflare`](./1-cloudflare.en.md) |
+| 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`2-aliyun`](./2-aliyun.en.md) |
+| 腾讯云 | Cloud API 3.0 | 待核实 | [`3-tencent`](./3-tencent.en.md) |
+| GitHub | REST + GraphQL + Actions + 二级 | 已核实 2024-11 | [`4-github`](./4-github.en.md) |
+| Vercel | 函数/Edge + REST API | 待核实 | [`5-vercel`](./5-vercel.en.md) |
+| BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`6-bandwagonhost`](./6-bandwagonhost.en.md) |
+| 跨厂商 | HTTP 速率响应头、backoff | n/a | [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.en.md) |
 
 ## 怎么使用
 
@@ -70,13 +70,13 @@ yq '.header_conventions' data/*.yaml
 
 每个厂商有一篇专文，讲实际细节（响应头语义、错误码约定、坑）：
 
-- [`1-cloudflare`](./1-cloudflare.md) —— REST 配额、`cf-mitigated` 与 429 的区别
-- [`2-aliyun`](./2-aliyun.md) —— 开放 API 每用户 QPS、`Throttling.*` 错误码体系
-- [`3-tencent`](./3-tencent.md) —— Cloud API 3.0、`X-RateLimit-*` 响应头、`DescribeApiRateLimit`
-- [`4-github`](./4-github.md) —— REST + GraphQL + Actions + Search + 二级速率、响应头语义
-- [`5-vercel`](./5-vercel.md) —— Function / Edge Function 配额、REST API 默认 1 RPS、RFC 9745 头
-- [`6-bandwagonhost`](./6-bandwagonhost.md) —— VPS 端口 25 屏蔽、带宽上限、连接上限
-- [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.md) —— 跨厂商 HTTP 速率响应头速查
+- [`1-cloudflare`](./1-cloudflare.en.md) —— REST 配额、`cf-mitigated` 与 429 的区别
+- [`2-aliyun`](./2-aliyun.en.md) —— 开放 API 每用户 QPS、`Throttling.*` 错误码体系
+- [`3-tencent`](./3-tencent.en.md) —— Cloud API 3.0、`X-RateLimit-*` 响应头、`DescribeApiRateLimit`
+- [`4-github`](./4-github.en.md) —— REST + GraphQL + Actions + Search + 二级速率、响应头语义
+- [`5-vercel`](./5-vercel.en.md) —— Function / Edge Function 配额、REST API 默认 1 RPS、RFC 9745 头
+- [`6-bandwagonhost`](./6-bandwagonhost.en.md) —— VPS 端口 25 屏蔽、带宽上限、连接上限
+- [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.en.md) —— 跨厂商 HTTP 速率响应头速查
 
 ## 核实状态
 
