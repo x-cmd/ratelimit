@@ -27,11 +27,13 @@ x-json-ld:
 | **GraphQL** | 任意 | 5000 点 | 1 小时 | token / installation（cost-based） |
 | **Search** | 任意 | 30 req | 1 分钟 | 用户 |
 | **Actions API** | 任意 | 1000 req | 1 小时 | 仓库 |
+| **GITHUB_TOKEN** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 小时 | workflow run / repo |
 | **二级** | — | 启发式 | — | 滥用检测 |
 
 **配额按什么算**：
 - PAT / OAuth（个人访问令牌）：按 token 算，一把 token 一个 5000/小时 的预算。
 - GitHub App：按 installation 算，一个仓一个预算。
+- `${{ secrets.GITHUB_TOKEN }}`：按 workflow run / repo 算，每个 workflow run 自动一个 token，run 完销毁。配额 1000/小时/repo，**所有 Actions API 调用共享**。
 - REST、GraphQL、Search、Actions 是 4 个独立的桶（不互相挤占）。`X-RateLimit-Resource` header 告诉你当前在哪个桶。
 
 ### 二、5 种下载暴露面（**只有 Releases API 计入 API 配额**）
@@ -125,6 +127,21 @@ query {
 - 短时间内重复相同内容
 
 触发时返回 429 + `Retry-After`，**跟 primary 429 看起来一样**。单从响应分不出哪个桶触发。
+
+### 五、GITHUB_TOKEN —— CI 场景的隐性撞墙点
+
+`${{ secrets.GITHUB_TOKEN }}` 是 GitHub Actions 自动提供的 token：
+
+- 每个 workflow run 自动创建、run 结束自动销毁。
+- 默认开启，不用额外配置。
+- **配额 1000 req/小时/repo**——所有 Actions API 端点共用这一个预算。
+
+**CI 撞墙陷阱**：N 个 workflow 并发跑同一个 repo，全部用 GITHUB_TOKEN——它们**共享 1000/小时**。一个 workflow 写炸（大量轮询），其他 workflow 一起 429。
+
+修法：
+- **用 PAT 替代**——预算是 per token，每个 workflow 用一把 PAT 互不影响。
+- **用 GitHub App 安装 token**——per installation 隔离。
+- **控制并发 + 用 conditional request**——见正文「客户端怎么处理」。
 
 ### 四、客户端怎么处理
 

@@ -27,9 +27,10 @@ x-json-ld:
 | **GraphQL** | Any | 5000 points | 1 hr | token / installation (cost-based) |
 | **Search** | Any | 30 req | 1 min | user |
 | **Actions API** | Any | 1000 req | 1 hr | repository |
+| **GITHUB_TOKEN** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 hr | workflow run / repo |
 | **Secondary** | — | Heuristic | — | abuse detection |
 
-**Unit key**: PAT / OAuth / user-to-server is **per token** (more tokens = more budget); GitHub App is **per installation** (more installations = more aggregate budget); Search / Actions / GraphQL / REST core are **separate buckets** — `X-RateLimit-Resource` header tells you which one.
+**Unit key**: PAT / OAuth / user-to-server is **per token** (more tokens = more budget); GitHub App is **per installation** (more installations = more aggregate budget); `${{ secrets.GITHUB_TOKEN }}` is **per workflow run / repo** (each run gets its own auto-expiring token, 1000/hr/repo shared across all runs in the repo); Search / Actions / GraphQL / REST core are **separate buckets** — `X-RateLimit-Resource` header tells you which one.
 
 ### 2. The 5 download surfaces (**only Releases API counts against the API quota**)
 
@@ -122,6 +123,22 @@ The query above costs **10 points** (the max field cost). Connection fields and 
 - Repeated identical-content requests in a short window
 
 Returns 429 + `Retry-After`. **Looks identical to primary 429** — you can't tell from the response which bucket fired.
+
+### 5. GITHUB_TOKEN — the CI wall
+
+`${{ secrets.GITHUB_TOKEN }}` is GitHub Actions' auto-provided token:
+
+- Auto-created per workflow run; destroyed when the run ends.
+- On by default, no setup required.
+- **Quota: 1000 req/hr/repo** — shared across all Actions API endpoints in that repo.
+
+**CI pitfall**: N workflows running concurrently in the same repo all share GITHUB_TOKEN. They share the **single 1000/hr/repo budget**. One runaway workflow (heavy polling) takes out the rest.
+
+Fixes:
+
+- **Use a PAT instead** — per-token budget isolates each workflow.
+- **Use a GitHub App installation token** — per-installation isolation.
+- **Cap concurrency + conditional requests** — see "Client-side handling" below.
 
 ### 4. Client-side handling
 
