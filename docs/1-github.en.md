@@ -22,7 +22,7 @@ x-json-ld:
 
 | Limit | Auth | Cap | Window | Unit |
 | --- | --- | --- | --- | --- |
-| **Primary REST** | PAT / OAuth / GitHub App | 5000 req | 1 hr | token / installation |
+| **Primary REST** | PAT (Personal Access Token) / OAuth / GitHub App | 5000 req | 1 hr | token / installation |
 | **Primary REST** | None | 60 req | 1 hr | source IP |
 | **GraphQL** | Any | 5000 points | 1 hr | token / installation (cost-based) |
 | **Search** | Any | 30 req | 1 min | user |

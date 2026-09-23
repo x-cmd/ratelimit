@@ -22,7 +22,7 @@ x-json-ld:
 
 | 限速面 | 认证 | 上限 | 窗口 | 单位 |
 | --- | --- | --- | --- | --- |
-| **Primary REST** | PAT / OAuth / GitHub App | 5000 req | 1 小时 | token / installation |
+| **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req | 1 小时 | token / installation |
 | **Primary REST** | 无 | 60 req | 1 小时 | 源 IP |
 | **GraphQL** | 任意 | 5000 点 | 1 小时 | token / installation（cost-based） |
 | **Search** | 任意 | 30 req | 1 分钟 | 用户 |
@@ -31,7 +31,7 @@ x-json-ld:
 | **二级** | — | 启发式 | — | 滥用检测 |
 
 **配额按什么算**：
-- PAT / OAuth（个人访问令牌）：按 token 算，一把 token 一个 5000/小时 的预算。
+- PAT / OAuth：按 token 算，一把 token 一个 5000/小时 的预算。
 - GitHub App：按 installation 算，一个仓一个预算。
 - `${{ secrets.GITHUB_TOKEN }}`：按 workflow run / repo 算，每个 workflow run 自动一个 token，run 完销毁。配额 1000/小时/repo，**所有 Actions API 调用共享**。
 - REST、GraphQL、Search、Actions 是 4 个独立的桶（不互相挤占）。`X-RateLimit-Resource` header 告诉你当前在哪个桶。
