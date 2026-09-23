@@ -1,7 +1,7 @@
 ---
-x-title: Cloudflare 速率限制 —— REST API 与各产品配额
-x-desc: Cloudflare 每用户 REST API 速率限制、免费套餐各产品上限（HTTP 请求、Workers）、API 速率限制与 `cf-mitigated` 挑战头的区别、健壮客户端的重试策略。
-x-sidebar: Cloudflare 速率限制
+x-title: Cloudflare 报错时怎么区分 — 429 是限速（你太快了），cf-mitigated 是滥用（它认为你是机器人）
+x-desc: Cloudflare 有两个看起来像但修法完全不同的"出错"信号。**HTTP 429 是速率限制** —— 你的请求太快，遵守 `Retry-After` 降速后重试即可。**`cf-mitigated` 是滥用检测** —— Cloudflare 怀疑你是机器人，这不是速率限制，要换 UA / IP / 节奏，重试只会更糟。
+x-sidebar: Cloudflare 429 vs cf-mitigated
 x-keywords: cloudflare, ratelimit, qps, api 配额, workers, 免费套餐, cf-mitigated, retry-after, 429
 x-json-ld:
   '@context': https://schema.org

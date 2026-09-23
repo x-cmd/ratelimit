@@ -1,7 +1,7 @@
 ---
-x-title: Cloudflare 出错时怎么回事 — 429 速率限制 与 cf-mitigated 滥用检测 不是一回事
-x-desc: Cloudflare 有两个长得像但意思完全不同的"出错了"信号。**HTTP 429 是速率限制**（你请求太多，`Retry-After` 让你等）。**`cf-mitigated` 是滥用检测**（Cloudflare 怀疑你是机器人，不是速率限制）。再加 REST API 配额和按产品的 HTTP 上限。
-x-sidebar: Cloudflare：429 vs cf-mitigated
+x-title: Cloudflare 报错时怎么区分 — 429 是限速（你太快了），cf-mitigated 是滥用（它认为你是机器人）
+x-desc: Cloudflare 有两个看起来像但修法完全不同的"出错"信号。**HTTP 429 是速率限制** —— 你的请求太快，遵守 `Retry-After` 降速后重试即可。**`cf-mitigated` 是滥用检测** —— Cloudflare 怀疑你是机器人，这不是速率限制，要换 UA / IP / 节奏，重试只会更糟。
+x-sidebar: Cloudflare 429 vs cf-mitigated
 x-keywords: cloudflare, ratelimit, qps, api 配额, workers, 免费层, cf-mitigated, 滥用检测, 429, retry-after
 x-json-ld:
   '@context': https://schema.org
