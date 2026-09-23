@@ -1,6 +1,6 @@
 ---
 name: 1-github
-description: GitHub rate limits (REST 5000/hr auth + 60/hr unauth, GraphQL 5000 pts/hr, Search 30/min, Actions 1000/hr/repo, secondary heuristic) and five download strategies: Releases API, HTML scraping, archive/tarball, raw content (raw.githubusercontent.com), and CDN mirrors (jsDelivr / Statically / gcore). Plus developer angle: gitattributes + sparse-checkout + cloud dev environments (Colab / Codespaces / Gitpod). x-bash/eget reference impl.
+description: GitHub rate limits (REST 5000/hr auth + 60/hr unauth, GraphQL 5000 pts/hr, Search 30/min, Actions 1000/hr/repo, secondary heuristic) — main article is rate-limit focused. FAQ carries the 5 download surfaces (Releases API / HTML / archive / raw / CDN), x eget comprehensive considerations (the actual code in x-cmd/x-cmd/mod/eget/lib/api), jsDelivr's semver / combine / npm capabilities, gitattributes + sparse-checkout, and cloud dev environments (Colab / Codespaces / Gitpod).
 type: reference
 ---
 
@@ -14,13 +14,6 @@ core_features:
   - Search API: 30 req/min per user (separate from REST primary)
   - Actions API: 1000 req/hr per repo
   - Secondary rate limit: heuristic abuse detection (bursts, concurrent in-flight, repeated identical content)
-  - **Five download surfaces**, each with its own rate-limit story:
-    - Releases API (`api.github.com`) — counts 5000/hr auth or 60/hr unauth
-    - HTML scraping (`github.com/.../releases/...`) — undocumented UI limit ~hundreds/hr per IP, DOM drift
-    - Archive tarball (`codeload.github.com/.../tar.gz/refs/...` or `github.com/.../archive/refs/.../tar.gz`) — Fastly CDN, no documented GitHub API limit, ≤100 MB cap
-    - Raw content (`raw.githubusercontent.com/...`) — Fastly CDN, no documented GitHub API limit, soft limit ~60-100 req/min per IP
-    - CDN mirrors (`cdn.jsdelivr.net/gh/...`, `cdn.statically.io/gh/...`, `gcore.jsdelivr.net/gh/...`) — CDN-level (~50M req/month free tier), eventually consistent
-  - Developer angle: gitattributes + sparse-checkout (`git clone --depth=1 --filter=blob:none --sparse`) + cloud dev environments (GitHub Codespaces, Gitpod, Google Colab)
 
 # Key Information
 
@@ -32,9 +25,7 @@ highlights:
   - `X-RateLimit-Resource` distinguishes which bucket (core / search / graphql / etc.)
   - Secondary rate limit has no published threshold; triggers on abuse-like patterns
   - 429 + Retry-After on both primary AND secondary — same response, different trigger conditions
-  - **Picking the right download surface saves API budget**: `raw.xxx` and `codeload.github.com` are CDN-backed, NOT counted against GitHub API quota
-  - **Only the Releases API counts** — the other four download surfaces are CDN-cached and exempt
-  - `x eget` (x-bash/eget) implements this exact strategy: API for listing → archive/raw for downloading
+  - **Article structure**: rate limit is the main axis; download strategies and `x eget` comprehensive considerations live in the FAQ (rendered as page body, not sidebar)
 
 # Use Cases
 
@@ -61,5 +52,5 @@ related:
   actions: https://docs.github.com/en/rest/actions
   search: https://docs.github.com/en/rest/search
   jsdelivr: https://www.jsdelivr.com/github/
-  eget: https://github.com/x-bash/eget
-  static: https://cdn.statically.io
+  eget-source: https://github.com/x-cmd/x-cmd/tree/X/mod/eget
+  eget-api: https://github.com/x-cmd/x-cmd/tree/X/mod/eget/lib/api
