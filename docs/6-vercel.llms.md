@@ -1,8 +1,8 @@
 ---
 name: 6-vercel
-description: Vercel rate limits — function execution quotas (Hobby 100 GB-hr/mo, Pro 1000 GB-hr/mo), Edge Function invocations (500k/mo Hobby, 5M/mo Pro), REST API default 1 RPS, RFC 9745 lowercase ratelimit-* headers, distinguishing 402 (plan-cap) vs 500 (code-error) vs 504 (timeout).
+description: "Vercel rate limits — function execution quotas (Hobby 100 GB-hr/mo, Pro 1000 GB-hr/mo), Edge Function invocations (500k/mo Hobby, 5M/mo Pro), REST API default 1 RPS, RFC 9745 lowercase ratelimit-* headers, distinguishing 402 (plan-cap) vs 500 (code-error) vs 504 (timeout)."
 type: reference
----
+
 
 # Core Content
 
@@ -20,9 +20,9 @@ core_features:
 highlights:
 
 - GB-hours formula: (memory GB) × (time hours) × (invocations) → consumption
-- Edge Functions and Serverless Functions have **separate quotas**
+- "Edge Functions and Serverless Functions have **separate quotas**"
 - HTTP status codes map to failure modes: 402 = plan-cap exceeded, 500 = code error, 504 = timeout
-- Headers use lowercase `ratelimit-*` (RFC 9745 compliant) — closest to IETF draft
+- "Headers use lowercase `ratelimit-*` (RFC 9745 compliant) — closest to IETF draft"
 - Preview deployments unlimited; production deployments capped
 - REST API default 1 RPS is the same across plans; differentiation is on product quotas
 

@@ -1,14 +1,14 @@
 ---
 name: 3-cloudflare
-description: Cloudflare rate limits — read responses as (status code × cf-mitigated) matrix. 429 alone = REST API quota (1200 req/5min/token). 429 + cf-mitigated:rate-limit = zone-level rate rule. 403 + cf-mitigated:challenge|block|bot|ip|country = WAF/Bot/rule block. 200 + cf-mitigated:challenge = JS challenge page. Per-product HTTP caps (Workers/KV/R2/D1) are separate from REST API quota.
+description: "Cloudflare rate limits — read responses as (status code × cf-mitigated) matrix. 429 alone = REST API quota (1200 req/5min/token). 429 + cf-mitigated:rate-limit = zone-level rate rule. 403 + cf-mitigated:challenge|block|bot|ip|country = WAF/Bot/rule block. 200 + cf-mitigated:challenge = JS challenge page. Per-product HTTP caps (Workers/KV/R2/D1) are separate from REST API quota."
 type: reference
----
+
 
 # Core Content
 
 core_features:
 
-  - **status × cf-mitigated matrix** is the right way to read Cloudflare responses — not status code alone
+  - "**status × cf-mitigated matrix** is the right way to read Cloudflare responses — not status code alone"
   - 429 alone (no cf-mitigated) = REST API quota: 1200 req / 5 min / API token
   - 429 + cf-mitigated: rate-limit = zone-level rate-limit rule (not account-level quota)
   - 403 + cf-mitigated: challenge|block|bot|ip|country = WAF / Bot / rule block (NOT rate limit)
