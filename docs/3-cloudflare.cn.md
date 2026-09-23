@@ -16,49 +16,7 @@ x-json-ld:
 
 ---
 
-## 一、status × cf-mitigated —— 怎么读响应
-
-| HTTP 状态 | `cf-mitigated` | 含义 | 修法 |
-| --- | --- | --- | --- |
-| `429` | （无） | **REST API 配额**（1200/5min/token） | 降速 + `Retry-After` |
-| `429` | `rate-limit` | **域名层 rate limit 规则** | 降速 + `Retry-After` |
-| `403` | `challenge` | **WAF challenge** | 解 challenge / 改模式 |
-| `403` | `block` | **WAF 直接挡** | 改节奏 + UA / 换 IP |
-| `403` | `bot` | **Bot Management 触发** | 同 `block` |
-| `403` | `ip` | **IP 规则** | 换 IP |
-| `403` | `country` | **国家规则** | 换 IP |
-| `200` | `challenge` | **JS challenge 页**（HTML） | headless 跑 JS |
-
-**每种响应是什么**：
-
-- **`429` + （无）** —— 真·REST API 配额到了。修法见第五节。
-- **`429` + `rate-limit`** —— 域名层 rate limit 规则触发，不是账户配额。
-- **`403` + `challenge`** —— WAF 给了 challenge（CAPTCHA / JS）。解决 challenge，或改客户端模式。
-- **`403` + `block`** —— WAF 直接挡，没有解决路径。必须改客户端模式或换 IP。
-- **`403` + `bot`** —— Bot Management（Cloudflare 的反机器人产品，比 WAF 更激进）触发（要 Enterprise 或 Super Bot Fight Mode 才开）。
-- **`403` + `ip` / `country`** —— IP / 国家规则触发。只能换 IP / 出口。
-- **`200` + `challenge`** —— Bot Management 给的 JS challenge 页（HTML 含 JS）。headless 浏览器能跑，curl / requests 不行。
-
-**为什么 Cloudflare 要拦你**：Cloudflare 不是给你找麻烦。**Cloudflare 在替它的客户（用 Cloudflare 的网站）挡可疑流量**。网站客户付钱是为了"我的站只服务真人"。WAF / Bot Management 是保护这个价值。你（调用方）被挡，是因为你的客户端模式撞到了 CF 给网站设的保护层。懂了这一层，"降速 + 换 UA + 换 IP" 不是绕弯，是 CF 设计上希望你这么干。
-
-**触发条件**（启发式，CF 不公开具体阈值）：
-
-- **User-Agent** —— `python-requests/2.31.0`、`curl/8.4.0` 等裸露信号；真实浏览器发 `Mozilla/5.0 ...`。
-- **节奏** —— 完美 1 秒间隔，无人类式抖动。
-- **单 IP QPS** —— 持续高 QPS 打到同一端点。
-- **无头浏览器指纹** —— 缺插件、缺字体、canvas / WebGL 指纹异常。
-- **IP 信誉** —— 数据中心 IP、Tor 出口、劣史住宅代理。
-
-**`challenge` vs `block`**：
-
-- **`challenge`** —— Cloudflare 给你个 CAPTCHA 或 JS challenge。**解决后通常能继续**。
-- **`block`** —— Cloudflare 直接挡，没有解决路径。**必须改客户端模式或换 IP**。
-
-**JS challenge 页怎么搞**：Cloudflare 返回 `200 OK` + 一个看起来正常的 HTML 页，里面嵌 JS challenge。客户端要执行 JS 算出 cookie（`cf_clearance`）让后续请求通过。Headless 浏览器（puppeteer / playwright）能跑——内置 JS 引擎。`curl` / `requests` 默认跑不了——没 JS 引擎。要么用 `cloudscraper` / `undetected-chromedriver`，要么放弃。
-
----
-
-## 二、REST API 配额
+## 一、REST API 配额
 
 | 套餐 | 配额 |
 | --- | --- |
@@ -78,7 +36,7 @@ x-json-ld:
 
 ---
 
-## 三、各产品 HTTP 上限（和 REST API 配额分开计）
+## 二、各产品 HTTP 上限（和 REST API 配额分开计）
 
 | 产品 | Free | Pro | Business |
 | --- | --- | --- | --- |
@@ -97,12 +55,12 @@ Workers / KV / R2 / D1 按产品算——和 REST API 配额**完全分开**。W
 
 ---
 
-## 四、关键响应头
+## 三、关键响应头
 
 | Header | 含义 | 何时 |
 | --- | --- | --- |
 | `Retry-After` | 整数秒，等这么久再试 | 429 时 |
-| `cf-mitigated` | 见第一节 | 各种 WAF / 配额场景 |
+| `cf-mitigated` | 见第五节 | 各种 WAF / 配额场景 |
 | `cf-ray` | CF 内部追踪 ID；找 CF 客服时给这个 | 任何错误 |
 | `cf-cache-status` | 缓存命中情况 | 任何响应 |
 
@@ -112,7 +70,7 @@ CF **不像 GitHub**，没有 `X-RateLimit-*` / `X-RateLimit-Reset` 系列。**4
 
 ---
 
-## 五、客户端怎么处理
+## 四、客户端怎么处理
 
 ```python
 import time
@@ -144,6 +102,48 @@ def call_cloudflare(url, token, max_retries=5):
 3. **`429` 用指数退避加 jitter**——避免惊群。
 4. **多 token 隔离 CI job**——每把 token 是独立配额池。
 5. **监控 `cf-mitigated` 比例**——比例突增 = 客户端模式或 IP 信誉变化，不是配额问题。
+
+---
+
+## 五、status × cf-mitigated —— 怎么读响应
+
+| HTTP 状态 | `cf-mitigated` | 含义 | 修法 |
+| --- | --- | --- | --- |
+| `429` | （无） | **REST API 配额**（1200/5min/token） | 降速 + `Retry-After` |
+| `429` | `rate-limit` | **域名层 rate limit 规则** | 降速 + `Retry-After` |
+| `403` | `challenge` | **WAF challenge** | 解 challenge / 改模式 |
+| `403` | `block` | **WAF 直接挡** | 改节奏 + UA / 换 IP |
+| `403` | `bot` | **Bot Management 触发** | 同 `block` |
+| `403` | `ip` | **IP 规则** | 换 IP |
+| `403` | `country` | **国家规则** | 换 IP |
+| `200` | `challenge` | **JS challenge 页**（HTML） | headless 跑 JS |
+
+**每种响应是什么**：
+
+- **`429` + （无）** —— 真·REST API 配额到了。详细修法见第四节。
+- **`429` + `rate-limit`** —— 域名层 rate limit 规则触发，不是账户配额。
+- **`403` + `challenge`** —— WAF 给了 challenge（CAPTCHA / JS）。解决 challenge，或改客户端模式。
+- **`403` + `block`** —— WAF 直接挡，没有解决路径。必须改客户端模式或换 IP。
+- **`403` + `bot`** —— Bot Management（Cloudflare 的反机器人产品，比 WAF 更激进）触发（要 Enterprise 或 Super Bot Fight Mode 才开）。
+- **`403` + `ip` / `country`** —— IP / 国家规则触发。只能换 IP / 出口。
+- **`200` + `challenge`** —— Bot Management 给的 JS challenge 页（HTML 含 JS）。headless 浏览器能跑，curl / requests 不行。
+
+**为什么 Cloudflare 要拦你**：Cloudflare 不是给你找麻烦。**Cloudflare 在替它的客户（用 Cloudflare 的网站）挡可疑流量**。网站客户付钱是为了"我的站只服务真人"。WAF / Bot Management 是保护这个价值。你（调用方）被挡，是因为你的客户端模式撞到了 CF 给网站设的保护层。懂了这一层，"降速 + 换 UA + 换 IP" 不是绕弯，是 CF 设计上希望你这么干。
+
+**触发条件**（启发式，CF 不公开具体阈值）：
+
+- **User-Agent** —— `python-requests/2.31.0`、`curl/8.4.0` 等裸露信号；真实浏览器发 `Mozilla/5.0 ...`。
+- **节奏** —— 完美 1 秒间隔，无人类式抖动。
+- **单 IP QPS** —— 持续高 QPS 打到同一端点。
+- **无头浏览器指纹** —— 缺插件、缺字体、canvas / WebGL 指纹异常。
+- **IP 信誉** —— 数据中心 IP、Tor 出口、劣史住宅代理。
+
+**`challenge` vs `block`**：
+
+- **`challenge`** —— Cloudflare 给你个 CAPTCHA 或 JS challenge。**解决后通常能继续**。
+- **`block`** —— Cloudflare 直接挡，没有解决路径。**必须改客户端模式或换 IP**。
+
+**JS challenge 页怎么搞**：Cloudflare 返回 `200 OK` + 一个看起来正常的 HTML 页，里面嵌 JS challenge。客户端要执行 JS 算出 cookie（`cf_clearance`）让后续请求通过。Headless 浏览器（puppeteer / playwright）能跑——内置 JS 引擎。`curl` / `requests` 默认跑不了——没 JS 引擎。要么用 `cloudscraper` / `undetected-chromedriver`，要么放弃。
 
 ---
 
