@@ -1,0 +1,201 @@
+id: x-ratelimit-2-rate-limit-headers
+
+data:
+  - name:
+      en: cross-service headers
+      cn: 跨服务响应头
+    qa:
+      - id: ratelimit-headers-overview
+        question:
+          cn: "速率限制响应头有哪些？怎么读？"
+          en: "What response headers indicate rate limiting?"
+        answer:
+          cn: |
+            不同服务用不同 header 家族：
+
+            | 服务 | Header |
+            |---|---|
+            | GitHub | `X-RateLimit-Limit/Remaining/Reset/Used/Resource` |
+            | Cloudflare | `Retry-After` + `cf-mitigated` |
+            | Bing / Yahoo / DuckDuckGo / Baidu / Shenma | 通常裸 429，可能带 `Retry-After` |
+
+            **读响应 5 步**：
+
+            1. 看状态码（429 vs 403 vs 200-with-cf-mitigated）
+            2. 看 `Retry-After`——有就是直接告诉等多久
+            3. 看 `X-RateLimit-*`（如果有）——算剩余时间和 reset 时间
+            4. 看 `cf-mitigated`（如果服务是 Cloudflare 后面的）——判断是速率限制还是 WAF
+            5. 看 `cf-ray` 或服务特定追踪 ID——找客服时给这个能加快排查
+
+            完整对照见正文速查表。
+          en: |
+            Different services use different header families:
+
+            | Service | Header |
+            |---|---|
+            | GitHub | `X-RateLimit-Limit/Remaining/Reset/Used/Resource` |
+            | Cloudflare | `Retry-After` + `cf-mitigated` |
+            | Bing / Yahoo / DuckDuckGo / Baidu / Shenma | usually bare 429, maybe `Retry-After` |
+
+            **5-step read**:
+
+            1. Status code (429 vs 403 vs 200-with-cf-mitigated)
+            2. `Retry-After` if present
+            3. `X-RateLimit-*` if service uses it
+            4. `cf-mitigated` if behind Cloudflare — distinguishes rate limit from WAF
+            5. `cf-ray` or service trace ID for support
+
+            Full matrix in the article.
+        confidence: 10
+        reference:
+          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/2-rate-limit-headers-cheatsheet.en.md
+
+      - id: retry-after-format
+        question:
+          cn: "Retry-After header 格式？跨服务一样吗？"
+          en: "Retry-After header format — is it consistent across services?"
+        answer:
+          cn: |
+            `Retry-After` 是 HTTP 标准 header，**整数秒**（如 `Retry-After: 60`）。
+
+            - **什么时候有**：429 响应（少数服务 503 也有）
+            - **跨服务一致**：GitHub / Cloudflare / 多数服务都遵守
+            - **不是相对秒**：HTTP 标准是**绝对秒数**（虽然大多数实现解释为"等这么多秒"——技术上不对，但实际工作）
+
+            跟 GitHub 的 `X-RateLimit-Reset`（绝对 UNIX 时间戳）不同。`Retry-After` 是相对值。
+          en: |
+            `Retry-After` is an HTTP standard header, **integer seconds** (e.g., `Retry-After: 60`).
+
+            - **When present**: on 429 (some services on 503 too)
+            - **Cross-service**: GitHub / Cloudflare / most services honor it
+            - **Format**: HTTP spec says absolute seconds (in practice, implementations treat it as relative "wait this many seconds" — works the same)
+
+            Unlike GitHub's `X-RateLimit-Reset` (absolute UNIX epoch), `Retry-After` is relative.
+        confidence: 10
+        reference:
+          - docs/2-rate-limit-headers-cheatsheet.cn.md
+
+      - id: x-ratelimit-reset-vs-retry-after
+        question:
+          cn: "X-RateLimit-Reset 和 Retry-After 有什么区别？"
+          en: "What's the difference between X-RateLimit-Reset and Retry-After?"
+        answer:
+          cn: |
+            两个完全不同的 header：
+
+            | Header | 格式 | 何时有 | 服务 |
+            |---|---|---|---|
+            | `X-RateLimit-Reset` | **UNIX 时间戳**（绝对） | 200 / 403 / 429 都有 | GitHub |
+            | `Retry-After` | **整数秒**（相对） | 仅 429 | 多数服务 |
+
+            算剩余时间方式不同：
+            - `X-RateLimit-Reset`：`wait = max(reset - now, 1)`（要算 `reset - now`）
+            - `Retry-After`：直接 sleep 这个秒数（已经是相对值）
+
+            新手常把 `X-RateLimit-Reset` 当相对值，结果 sleep 时间算错。
+          en: |
+            Two different headers:
+
+            | Header | Format | When present | Service |
+            |---|---|---|---|
+            | `X-RateLimit-Reset` | **UNIX epoch** (absolute) | 200 / 403 / 429 | GitHub |
+            | `Retry-After` | **integer seconds** (relative) | 429 only | most services |
+
+            Different way to compute wait:
+            - `X-RateLimit-Reset`: `wait = max(reset - now, 1)` (subtract)
+            - `Retry-After`: just sleep that many seconds
+
+            Common footgun: treating `X-RateLimit-Reset` as relative.
+        confidence: 10
+        reference:
+          - docs/2-rate-limit-headers-cheatsheet.cn.md
+
+      - id: cf-mitigated-not-rate-limit
+        question:
+          cn: "Cloudflare cf-mitigated 是什么？跟速率限制是一回事吗？"
+          en: "Cloudflare cf-mitigated — what is it? Same as rate limit?"
+        answer:
+          cn: |
+            **不是**——cf-mitigated 是 Cloudflare 的 WAF / Bot 触发信号，**不是速率限制**。
+
+            `cf-mitigated` 值：
+            - `challenge`：WAF 给 challenge（CAPTCHA / JS challenge）——解决后通常能继续
+            - `block`：WAF 直接挡——必须改客户端模式或换 IP
+            - `bot`：Bot Management 触发（要 Enterprise / Super Bot Fight Mode）
+            - `ip`：IP 规则触发
+            - `country`：国家规则触发
+
+            跟真·速率限制（429 + `Retry-After`）是两个完全不同的信号。把它们搞混修法越修越糟。
+          en: |
+            **No** — cf-mitigated is Cloudflare's WAF / Bot signal, **NOT** a rate limit.
+
+            `cf-mitigated` values:
+            - `challenge`: WAF gives a challenge (CAPTCHA / JS)
+            - `block`: WAF direct block
+            - `bot`: Bot Management triggered (Enterprise / Super Bot Fight Mode)
+            - `ip`: IP-based rule triggered
+            - `country`: Country-based rule triggered
+
+            Different from true rate limit (429 + `Retry-After`). Conflating them makes the fix worse.
+        confidence: 10
+        reference:
+          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/3-cloudflare.cn.md
+
+      - id: cloudflare-no-x-ratelimit-headers
+        question:
+          cn: "Cloudflare 用 X-RateLimit-* header 吗？"
+          en: "Does Cloudflare use X-RateLimit-* headers?"
+        answer:
+          cn: |
+            **不用**。Cloudflare 不像 GitHub 发 `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset` 等。
+
+            Cloudflare 的限速信号：
+            - 429 状态码 + `Retry-After` header
+            - 没有"剩余配额"概念——撞 429 才知道
+
+            不要为 Cloudflare 写"读 `X-RateLimit-Remaining` 预检配额"逻辑——这个 header 不会来。
+          en: |
+            **No**. Cloudflare doesn't send `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset`.
+
+            Cloudflare's rate-limit signal:
+            - 429 status + `Retry-After` header
+            - No "remaining quota" concept — you only find out at 429
+
+            Don't write "read `X-RateLimit-Remaining` to pre-check" logic for Cloudflare — that header won't come.
+        confidence: 9
+        reference:
+          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/3-cloudflare.cn.md
+
+      - id: search-engine-headers
+        question:
+          cn: "Bing / Yahoo / Baidu / DuckDuckGo 撞限速时返回什么 header？"
+          en: "What headers do Bing / Yahoo / Baidu / DuckDuckGo return on rate limit?"
+        answer:
+          cn: |
+            这些搜索引擎（除 Google）大多简单：
+            - **429 状态码**（偶尔 503）
+            - 可能带 `Retry-After`，可能不带
+            - **不带**详细 `X-RateLimit-*` family
+
+            实操：
+            - 撞 429 sleep 30 秒到几分钟
+            - 保守并发（≤ 1 QPS per IP）
+            - 用代理 / IP 池
+            - 不依赖 `X-RateLimit-*` family——这些服务不发
+          en: |
+            Search engines (other than Google) are mostly bare:
+            - **429 status** (occasionally 503)
+            - Maybe `Retry-After`, maybe not
+            - **No** detailed `X-RateLimit-*` family
+
+            Practical:
+            - On 429, sleep 30 sec to a few min
+            - Conservative concurrency (≤ 1 QPS per IP)
+            - Use proxy / IP pool
+            - Don't rely on `X-RateLimit-*` family — these services don't send it
+        confidence: 7
+        reference:
+          - docs/2-rate-limit-headers-cheatsheet.cn.md
