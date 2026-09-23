@@ -23,9 +23,9 @@ x-json-ld:
 | **Primary REST** | PAT (Personal Access Token) / OAuth / GitHub App | 5000 req / token or installation | 1 hr |
 | **Primary REST** | None | 60 req / source IP | 1 hr |
 | **GITHUB_TOKEN** (GitHub Actions default) | `${{ secrets.GITHUB_TOKEN }}` | 1000 req / repo (all workflow runs in repo share) | 1 hr |
-| **GraphQL** | Any | 5000 points / token (cost-based) | 1 hr |
-| **Search** | Any | 30 req / user | 1 min |
-| **Actions API** | Any | 1000 req / repo | 1 hr |
+| **GraphQL** | (any auth) | 5000 points / token (cost-based) | 1 hr |
+| **Search** | (any auth) | 30 req / user | 1 min |
+| **Actions API** | (any auth) | 1000 req / repo | 1 hr |
 | **Secondary** | — | Heuristic trigger | — |
 
 **Unit key** (read `/ X` part of the Cap column):

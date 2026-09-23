@@ -23,9 +23,9 @@ x-json-ld:
 | **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req / token 或 installation | 1 小时 |
 | **Primary REST** | 无 | 60 req / source IP | 1 小时 |
 | **GITHUB_TOKEN**（GitHub Actions 默认）| `${{ secrets.GITHUB_TOKEN }}` | 1000 req / repo（同一 repo 的所有 workflow run 共享）| 1 小时 |
-| **GraphQL** | 任意 | 5000 点 / token（按查询成本算） | 1 小时 |
-| **Search** | 任意 | 30 req / user | 1 分钟 |
-| **Actions API** | 任意 | 1000 req / repo | 1 小时 |
+| **GraphQL** | （任一认证） | 5000 点 / token（按查询成本算） | 1 小时 |
+| **Search** | （任一认证） | 30 req / user | 1 分钟 |
+| **Actions API** | （任一认证） | 1000 req / repo | 1 小时 |
 | **二级** | — | 启发式触发 | — |
 
 **配额按什么算**（看 "上限" 列的 `/ X` 部分）：
