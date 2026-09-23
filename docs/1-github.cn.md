@@ -1,6 +1,6 @@
 ---
 x-title: GitHub 速率限制 —— 速查（5 种限速 + 5 种下载方式）
-x-desc: 速查表：GitHub 5 种限速（REST 5000/小时、GraphQL 5000 点/小时、Search 30/分钟、Actions 1000/小时、二级启发式）+ 5 种下载方式（Releases API / HTML / archive / raw / CDN），其中只有 Releases API 计入 API 配额。
+x-desc: 速查表：GitHub 5 种限速（REST 5000/小时、GraphQL 5000 点/小时、Search 30/分钟、Actions 1000/小时、二级启发式）+ 撞限速后的 5 种替代下载（Releases API / HTML / archive / raw / CDN，其中只有 Releases API 计入 API 配额）。
 x-sidebar: GitHub 速率限制 + 替代方案
 x-keywords: github, ratelimit, api 配额, rest api, graphql, actions, 二级速率限制, x-ratelimit, oauth, github app, releases api, codeload, raw.githubusercontent.com, jsdelivr
 x-json-ld:
@@ -69,7 +69,7 @@ x-json-ld:
 
 ---
 
-## 二、5 种下载方式（**只有 Releases API 计入 API 配额**）
+## 二、撞上限制了？换种方式 -- 5 种替代下载
 
 | 下载方式 | URL | 计入 API 配额？ | 适用 |
 | --- | --- | --- | --- |

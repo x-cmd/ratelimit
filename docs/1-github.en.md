@@ -1,6 +1,6 @@
 ---
 x-title: GitHub rate limits — quick reference (5 limits + 5 download methods)
-x-desc: Quick reference: GitHub's 5 rate limits (REST 5000/hr, GraphQL 5000 points/hr, Search 30/min, Actions 1000/hr, secondary heuristic) + 5 download methods (Releases API / HTML / archive / raw / CDN), where only the Releases API counts against the API quota.
+x-desc: Quick reference: GitHub's 5 rate limits (REST 5000/hr, GraphQL 5000 points/hr, Search 30/min, Actions 1000/hr, secondary heuristic) + 5 alternative download methods when you hit the limit (Releases API / HTML / archive / raw / CDN), where only Releases API counts against the API quota.
 x-sidebar: GitHub rate limits + alt surfaces
 x-keywords: github, ratelimit, api quota, rest api, graphql, actions, secondary rate limit, x-ratelimit, oauth, github app, releases api, codeload, raw.githubusercontent.com, jsdelivr
 x-json-ld:
@@ -65,7 +65,7 @@ x-json-ld:
 
 ---
 
-## 2. The 5 download methods (**only Releases API counts against the API quota**)
+## 2. Hit the limit? Try alternative downloads — 5 methods
 
 | Method | URL | Counts vs API quota? | Best for |
 | --- | --- | --- | --- |
