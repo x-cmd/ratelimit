@@ -1,6 +1,6 @@
 ---
-x-title: Cloudflare 速率限制 —— 速查（status code + cf-mitigated 组合）
-x-desc: 速查表：REST API 配额（1200 req/5min/token）、各产品 HTTP 上限、status code + cf-mitigated header 组合对照。讲解：怎么从响应判断 Cloudflare 是限速还是 WAF / Bot 挡机器人，以及怎么处理。
+x-title: Cloudflare 撞上 429 了？先看是速率限制还是 cf-mitigated
+x-desc: 撞 Cloudflare 出错？先看 (status code, cf-mitigated header) 二元组：429 + Retry-After 是速率限制；403 + cf-mitigated 是 WAF / Bot 挡机器人。完整速查表 + 各产品配额 + 客户端处理。
 x-sidebar: Cloudflare 速率限制
 x-keywords: cloudflare, ratelimit, qps, api 配额, workers, 免费套餐, cf-mitigated, retry-after, 429, 403
 x-json-ld:
@@ -12,11 +12,11 @@ x-json-ld:
       about: 'Cloudflare API 与各产品速率限制'
 ---
 
-# Cloudflare 速率限制 —— 速查（status code + cf-mitigated 组合）
+# Cloudflare 撞上 429 了？先看是速率限制还是 cf-mitigated
 
 ---
 
-## 一、status × cf-mitigated —— 响应怎么读
+## 一、撞错了？先看 (status, cf-mitigated) 怎么读
 
 | HTTP 状态 | `cf-mitigated` | 含义 | 修法 |
 | --- | --- | --- | --- |
@@ -58,20 +58,21 @@ x-json-ld:
 
 ---
 
-## 二、REST API 配额（429 + 无 cf-mitigated 的源头）
+## 二、REST API 配额
 
-| 套餐 | 上限 | 窗口 | 单位 |
-| --- | --- | --- | --- |
-| Free | 1200 次 | 5 min | API token |
-| Pro | 1200 次 | 5 min | API token |
-| Business | 1200 次 | 5 min | API token |
-| Enterprise | 自定义 | 自定义 | API token |
+| 套餐 | 配额 |
+| --- | --- |
+| Free | 1200 req / 5 min / API token |
+| Pro | 1200 req / 5 min / API token |
+| Business | 1200 req / 5 min / API token |
+| Enterprise | 自定义 |
 
 **单位是 API token，不是 Cloudflare 账号**：
 
+- **API token** 是你在 [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) 里 Generate 出来的——大部分脚本和 curl 用的是这个。每次 Create Token 可以限定权限（"这把只能读 DNS，那把可以写 Workers"），可以撤销，可以只读。
 - 一把 token 一个独立配额。两把 token = 两个配额池。
 - CI 任务给每个 job 一把 token——一个写炸不会拖全队。
-- Global API Key（旧式，2024 前）一把共享——CI 老炸是这个原因。
+- Global API Key（旧式，2024 前集成）一把共享——CI 老炸是这个原因。
 
 [来源：developers.cloudflare.com/fundamentals/api/reference/limits/](https://developers.cloudflare.com/fundamentals/api/reference/limits/)
 
@@ -106,6 +107,8 @@ Workers / KV / R2 / D1 按产品算——和 REST API 配额**完全分开**。W
 | `cf-cache-status` | 缓存命中情况 | 任何响应 |
 
 CF **不像 GitHub**，没有 `X-RateLimit-*` / `X-RateLimit-Reset` 系列。**429 + `Retry-After` 是唯一可靠的限速信号**。
+
+跨服务对比见 [2-rate-limit-headers-cheatsheet](2-rate-limit-headers-cheatsheet) §一。
 
 ---
 
