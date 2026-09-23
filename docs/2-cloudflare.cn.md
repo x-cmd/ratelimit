@@ -1,8 +1,8 @@
 ---
-x-title: Cloudflare 速率限制 —— REST API 与各产品配额
-x-desc: Cloudflare 每用户 REST API 速率限制、免费套餐各产品上限（HTTP 请求、Workers）、API 速率限制与 `cf-mitigated` 挑战头的区别、健壮客户端的重试策略。
+x-title: Cloudflare 速率限制 —— 速查（status code + cf-mitigated 组合）
+x-desc: 速查表：REST API 配额（1200 req/5min/token）、各产品 HTTP 上限、status code + cf-mitigated header 组合对照。讲解：怎么从响应判断 Cloudflare 是限速还是 WAF / Bot 挡机器人，以及怎么处理。
 x-sidebar: Cloudflare 速率限制
-x-keywords: cloudflare, ratelimit, qps, api 配额, workers, 免费套餐, cf-mitigated, retry-after, 429
+x-keywords: cloudflare, ratelimit, qps, api 配额, workers, 免费套餐, cf-mitigated, retry-after, 429, 403
 x-json-ld:
   '@context': https://schema.org
   '@graph':
@@ -12,170 +12,138 @@ x-json-ld:
       about: 'Cloudflare API 与各产品速率限制'
 ---
 
-# Cloudflare 速率限制 —— REST API 与各产品配额
-
-Cloudflare 有 **两个长得像但意思完全不同的"出错了"信号**。它们容易被
-混淆 —— 而把一个搞错了修法只会让另一个更糟。
-
-| 信号 | 是什么意思 | 怎么触发 |
-| --- | --- | --- |
-| **`HTTP 429 Too Many Requests`** | **速率限制。** 你在窗口内发请求太多了。遵守 `Retry-After`。 | 纯请求计数超出你 token 的配额。 |
-| **`cf-mitigated: challenge` 或 `cf-mitigated: block`** | **滥用检测。** Cloudflare 觉得你的客户端看起来像机器人/自动化。**不是速率限制。** | WAF 启发式 —— User-Agent 字符串、自动化节奏、请求频率、IP 信誉。 |
-
-本文接下来按各自单独讲：
-
-1. **REST API 配额** —— 429 是从哪里来的。
-2. **各产品的 HTTP 上限** —— 免费层各产品自己的限流。
-3. **你请求太快了，Cloudflare 怎么处理** —— 429 的修法。
-4. **Cloudflare 把你当成机器人** —— cf-mitigated 的修法（**不是速率限制**）。
-5. **客户端遇到这两种情况怎么办** —— 一个 client 同时处理两种情况。
+# Cloudflare 速率限制 —— 速查（status code + cf-mitigated 组合）
 
 ---
 
-## REST API 配额 —— 429 是从哪里来的
+## 速查
 
-大多数 Cloudflare REST API 端点共享一个按用户配额：
+### 一、status code × cf-mitigated —— 响应怎么读
 
-| 套餐 | 上限 | 窗口 | 每 |
+| HTTP 状态 | `cf-mitigated` | 含义 | 修法 |
 | --- | --- | --- | --- |
-| Free | 1200 次 | 5 分钟 | 用户 |
-| Pro | 1200 次 | 5 分钟 | 用户 |
-| Business | 1200 次 | 5 分钟 | 用户 |
-| Enterprise | 自定义 | 自定义 | 用户 |
+| `429` | （无） | **REST API 配额**（1200/5min/token） | 降速 + `Retry-After` |
+| `429` | `rate-limit` | **域名层 rate limit 规则** | 降速 + `Retry-After` |
+| `403` | `challenge` | **WAF challenge** | 解 challenge / 改模式 |
+| `403` | `block` | **WAF 直接挡** | 改节奏 + UA / 换 IP |
+| `403` | `bot` | **Bot Management 触发** | 同 `block` |
+| `403` | `ip` | **IP 规则** | 换 IP |
+| `403` | `country` | **国家规则** | 换 IP |
+| `200` | `challenge` | **JS challenge 页**（HTML） | headless 跑 JS |
 
-各套餐的每用户配额相同；差别在产品级 HTTP 上限（下一节）。Free
-与 Pro 的"1200 次 / 5 分钟"是 Cloudflare 有意为之 —— 套餐差异在 API
-的 *消费者侧*，不在 *操作者侧*。
+`challenge` / `block` / `bot` / `ip` / `country` 全是 WAF（Web 应用防火墙）/ Bot Management 干的活——Cloudflare 在替**它服务的网站**挡可疑流量，**不是限你的 API 配额**。
 
-### "每用户"在此处是什么意思 —— 实际上 key 是 API token
+### 二、REST API 配额（429 + 无 cf-mitigated 的源头）
 
-要懂这个，得先知道 Cloudflare API 是什么：
+| 套餐 | 上限 | 窗口 | 单位 |
+| --- | --- | --- | --- |
+| Free | 1200 次 | 5 min | API token |
+| Pro | 1200 次 | 5 min | API token |
+| Business | 1200 次 | 5 min | API token |
+| Enterprise | 自定义 | 自定义 | API token |
 
-- **Cloudflare API** 是你从命令行（或代码）操作 Cloudflare 资源的入口
-  —— 加域名、改 DNS 记录、查看 Workers 日志、部署 Workers 代码、调
-  KV 数据等等。不打开浏览器，从脚本里直接操作。
-- **API token** 是你登录 Cloudflare 后在 `dash.cloudflare.com/profile/
-  api-tokens` 创建的"凭据" —— 像密码，但不是密码（可以设权限范围、
-  可以撤销、可以只读）。你可以创建很多把 token，每把 token 可以
-  设不同的权限（如"这把只能读 DNS，那把可以写 Workers"）。
+**单位是 API token，不是 Cloudflare 账号。**
 
-速率限制以 **API token** 作为键（不是以你的 Cloudflare 账号作为
-键）。这意味着：
+- 一把 token 一个独立配额。两把 token = 两个配额池。
+- CI 任务给每个 job 一把 token——一个写炸不会拖全队。
+- Global API Key（旧式，2024 前）一把共享——CI 老炸是这个原因。
 
-- 你创建两把 API token，每把 token 都有**自己**的 1200/5min 配额。
-  它们互相不共享。你不会因为**这把** token 用爆而拖累了**那把**
-  token 的预算。
-- 这设计是刻意的。CI / 定时任务里常见场景是"几十个 job 并发跑"——
-  你可以让**每个 CI job 拿一把自己的 token** 来隔离突发。一个
-  job 写炸了（发爆）不会拖所有 job 一起 429。
-- 旧集成（2024 年前）用的 **API key**（Global API Key）只有一把，
-  且**所有用它的脚本共享一把配额**。这就是为啥 CI 团队会被迫
-  升级到 API token 体系。
+[来源：developers.cloudflare.com/fundamentals/api/reference/limits/](https://developers.cloudflare.com/fundamentals/api/reference/limits/)
 
-所以"每用户"的"用户"，实际是"每把 API token"。
+### 三、各产品 HTTP 上限（和 REST API 配额分开计）
 
-### 单独配额的端点
+| 产品 | Free | Pro | Business |
+| --- | --- | --- | --- |
+| HTTP 请求 / zone / 天 | 100K | 10M / 月 | 100M / 月 |
+| Workers 请求 / 天 | 100K | 1M / 月 | 20M / 月 |
+| Pages 请求 | 无限（带宽上限） | 无限（带宽上限） | 无限（带宽上限） |
+| KV 读 / 天 | 100K | 10M | 100M |
+| KV 写 / 天 | 1K | 1M | 10M |
+| KV 删 / 天 | 1K | 1M | 10M |
+| R2 操作 / 月 | 10M（A 级） | 50M | 自定义 |
+| D1 读 / 天 | 5M | 5B 行 / 月 | 自定义 |
 
-少数端点有独立配额，而不是共用 1200/5min：
+Workers / KV / R2 / D1 按产品算——和 REST API 配额**完全分开**。Workers 用完不影响 API 配额。Enterprise 全部自定义——谈。
 
-- `GET /zones/:id`（zone 详情）—— 较高，支撑 zone 列表类工作流
-- DNS 读端点 —— 历史上较高，支撑批量枚举
-- Workers KV / R2 / D1 —— 这些是 *产品级* 配额（见下），不是
-  REST API 配额
+[来源：Workers](https://developers.cloudflare.com/workers/platform/limits/) · [KV](https://developers.cloudflare.com/kv/platform/limits/) · [R2](https://developers.cloudflare.com/r2/platform/limits/) · [D1](https://developers.cloudflare.com/d1/platform/limits/)
 
-新的端点例外会不定期添加；以 live 的
-`developers.cloudflare.com/fundamentals/api/reference/limits/` 为准。
+### 四、关键响应头
 
----
+| Header | 含义 | 何时 |
+| --- | --- | --- |
+| `Retry-After` | 整数秒，等这么久再试 | 429 时 |
+| `cf-mitigated` | 见上表（一） | 各种 WAF / 配额场景 |
+| `cf-ray` | CF 内部追踪 ID；找 CF 客服时给这个 | 任何错误 |
+| `cf-cache-status` | 缓存命中情况 | 任何响应 |
 
-## 各产品的 HTTP 上限
-
-| 产品 | Free | Pro | Business | Enterprise |
-| --- | --- | --- | --- | --- |
-| HTTP 请求 / zone / 天 | 100K | 10M / 月 | 100M / 月 | 自定义 |
-| Workers 请求 / 天 | 100K | 1M / 月 | 20M / 月 | 自定义 |
-| Pages 请求 | 无限（带宽上限） | 无限（带宽上限） | 无限（带宽上限） | 自定义 |
-| KV 读 / 天 | 100K | 10M | 100M | 自定义 |
-| KV 写 / 天 | 1K | 1M | 10M | 自定义 |
-| KV 删 / 天 | 1K | 1M | 10M | 自定义 |
-| R2 操作 / 月 | 10M（A 级） | 50M | 自定义 | 自定义 |
-| D1 读 / 天 | 5M | 5B 行 / 月 | 自定义 | 自定义 |
-
-这些上限与 REST API 配额**分开** —— Workers 配额用完不影响 API 配
-额，反之亦然。两边都看。
+CF **不像 GitHub**，没有 `X-RateLimit-*` / `X-RateLimit-Reset` 系列。**429 + `Retry-After` 是唯一可靠的限速信号**。
 
 ---
 
-## 你请求太快了，Cloudflare 怎么处理
+## 正文
 
-当你超出按 token 的配额（默认 1200/5min）时，Cloudflare 响应：
+### 一、`429` —— 限速，但要看 cf-mitigated 区分来源
 
-```http
-HTTP/1.1 429 Too Many Requests
-Retry-After: 60
-Content-Type: application/json
-{"success": false, "errors": [{"code": 10000, "message": "Rate limit exceeded"}]}
-```
+#### `429` + （无 cf-mitigated）
 
-**这是速率限制。** 修法：
+最常见。这是 **REST API 配额**到了：1200 次 / 5 min / API token。修法：
 
-1. **遵守 `Retry-After`** —— 响应告诉你什么时候回来。在那个时间
-   之前别重试。
-2. **降速** —— 你的请求率对该 token 的配额太高了。用指数退避
-   加 jitter。
-3. **本地跟踪配额** —— 别打到 429 之前就已经在跟踪本地的使用量。
-4. **用多个 token** —— 每个 token 有自己的 1200/5min。把负载分散
-   到 CI 任务。
+1. **遵守 `Retry-After`**（整数秒）—— 在那个时间之前别重试。
+2. **指数退避加 jitter** —— `base * 2^attempt + random(0, jitter)`。裸指数退避会引发惊群效应（多客户端同时重试撞上限）。
+3. **本地跟踪配额** —— 别等打到 429 才发现快到顶了。
+4. **多 token 隔离** —— CI 场景给每个 job 一把 token，写炸不会拖全队。
 
-`429` 是**可恢复**的。降速，配额重置，你继续。
+`429` 是**可恢复**的——降速，窗口滚出，继续。
 
----
+#### `429` + `cf-mitigated: rate-limit`
 
-## Cloudflare 把你当成机器人（不是速率限制，是滥用检测）
+这是**域名上**设的 rate limit 规则触发的，不是账户级 API 配额。规则例子：
 
-当 Cloudflare 的 WAF / 滥用检测觉得你的客户端像自动化、像可疑的或
-像恶意的，它返回一个挑战页或拦截页，并设 `cf-mitigated` 头：
+- 单 IP 每分钟 60 次
+- 某路径每 10 秒 10 次
+- 特定国家每 5 分钟 5 次
 
-```http
-HTTP/1.1 403 Forbidden
-cf-mitigated: challenge
-cf-ray: ...
-```
+修法一样（降速 + `Retry-After`），但**原因不同**——是你域名上的规则，不是 Cloudflare 全局配额。规则在 Cloudflare dashboard → Security → Rate limit rules 看。
 
-或：
+### 二、`403` + `cf-mitigated` —— 不是限速，是 WAF / Bot Management
 
-```http
-HTTP/1.1 403 Forbidden
-cf-mitigated: block
-```
+`cf-mitigated` 在 403 里的所有值（`challenge` / `block` / `bot` / `ip` / `country`）**都不是限速**——是 WAF / Bot Management 触发的。
 
-**这不是速率限制。** 这是 Cloudflare 的滥用防御 —— WAF 启发式标
-记了你的客户端。常见的触发原因：
+#### 为什么 Cloudflare 要拦你
 
-- **User-Agent 字符串** —— `python-requests/2.31.0`、
-  `curl/8.4.0`、`Java/17.0.5` 等。真实浏览器发 `Mozilla/5.0 ...`。
-- **自动化节奏** —— 完美的 1 秒间隔，没有人类式的变化。
-- **单 IP 请求量** —— 持续高 QPS，特别是打到同一端点。
-- **无头浏览器信号** —— 缺插件、缺字体、无 canvas / WebGL 指纹。
-- **IP 信誉** —— 数据中心 IP、Tor 出口节点、有劣史的住宅代理。
+Cloudflare 不是给你找麻烦。**Cloudflare 在替它的客户（用 Cloudflare 的网站）挡可疑流量**。
 
-修法**根本不同**于 429：
+- 网站客户付钱是为了"我的站只服务真人"。
+- WAF / Bot Management 是保护这个价值。
+- 你（调用方）被挡，是因为你的客户端模式撞到了 CF 给网站设的保护层。
 
-| 429（速率限制） | cf-mitigated（滥用） |
-| --- | --- |
-| 降速 | **降速 + 改客户端身份** |
-| 遵守 `Retry-After` | 没 `Retry-After`；要改模式 |
-| 同一客户端，更低速率 | 不同 UA、不同节奏、可能要不同 IP |
-| 几秒就恢复 | 可能几小时不恢复，或要换 IP |
+懂了这一层，"降速 + 换 UA + 换 IP" 不是绕弯，是 CF 设计上希望你这么干。
 
-`cf-mitigated` **很难自动恢复**。客户端通常需要从根本上降速（人类
-式节奏）、换 User-Agent、可能要换 IP。或换网络。
+#### 触发条件（启发式，CF 不公开具体阈值）
 
----
+- **User-Agent** —— `python-requests/2.31.0`、`curl/8.4.0` 等裸露信号；真实浏览器发 `Mozilla/5.0 ...`。
+- **节奏** —— 完美 1 秒间隔，无人类式抖动。
+- **单 IP QPS** —— 持续高 QPS 打到同一端点。
+- **无头浏览器指纹** —— 缺插件、缺字体、canvas / WebGL 指纹异常。
+- **IP 信誉** —— 数据中心 IP、Tor 出口、劣史住宅代理。
 
-## 客户端遇到这两种情况怎么办
+#### `challenge` vs `block`
 
-一个健壮的 Cloudflare 客户端分别处理两种情况：
+- `challenge` —— Cloudflare 给你个 CAPTCHA 或 JS challenge。**解决后通常能继续**。
+- `block` —— Cloudflare 直接挡，没有解决路径。**必须改客户端模式或换 IP**。
+
+#### `bot` 值
+
+`bot` 是 Bot Management 产品（Enterprise 或 Super Bot Fight Mode）触发。普通用户不会触发，除非他显式开了。
+
+### 三、`200` + `cf-mitigated: challenge` —— JS challenge 页
+
+Cloudflare 返回 `200 OK` + 一个看起来正常的 HTML 页，里面嵌 JS challenge。客户端要执行 JS 算出 cookie（`cf_clearance`）让后续请求通过。
+
+- Headless 浏览器（puppeteer / playwright）能跑——内置 JS 引擎。
+- `curl` / `requests` 默认跑不了——没 JS 引擎。要么用 `cloudscraper` / `undetected-chromedriver`，要么放弃。
+
+### 四、客户端怎么处理
 
 ```python
 import time
@@ -183,65 +151,38 @@ import random
 
 def call_cloudflare(url, token, max_retries=5):
     for attempt in range(max_retries):
-        response = requests.get(
-            url,
-            headers={"Authorization": f"Bearer {token}"}
-        )
+        r = requests.get(url, headers={"Authorization": f"Bearer {token}"})
 
-        # 情况 1：速率限制 — 退避重试
-        if response.status_code == 429:
-            retry_after = int(response.headers.get("Retry-After", "60"))
-            backoff = retry_after + random.uniform(0, 5)
-            time.sleep(backoff)
+        if r.status_code == 429:
+            # 限速——遵守 Retry-After，退避重试
+            wait = int(r.headers.get("Retry-After", "60"))
+            time.sleep(wait + random.uniform(0, 5))
             continue
 
-        # 情况 2：滥用检测 — 升级处理
-        if "cf-mitigated" in response.headers:
-            log.warning(f"cf-mitigated: {response.headers['cf-mitigated']}")
-            # 别自动重试 — 大幅退避或换身份
-            raise AbuseDetected(
-                f"Cloudflare WAF 触发: {response.headers['cf-mitigated']}"
-            )
+        if "cf-mitigated" in r.headers:
+            # WAF / Bot——别自动重试，改模式或换 IP
+            raise AbuseDetected(r.headers["cf-mitigated"])
 
-        # 成功或其他错误
-        return response
+        return r
 
     raise RateLimitExceeded()
 ```
 
-三条经验：
+要点：
 
-1. **`429` 遵守 `Retry-After`**。别在那个时间之前重试。
-2. **不要自动重试 `cf-mitigated`**。WAF 标记了你的客户端模式；
-   用同模式重试就是一直被标记。大幅退避或换身份。
-3. **`429` 用指数退避加 jitter**。裸指数退避会引发惊群效应，多个
-   客户端同时打到上限时会同时重试。
-
----
-
-## 本文不涵盖的
-
-- **DDoS 防护**（与速率限制分开）。
-- **Bot management**（Cloudflare 的 Bot Fight Mode / Super Bot
-  Fight Mode / Bot Management for Enterprise）。
-- **你自己在 zone 上设的速率限制规则**（这些是你域名上的配置，
-  不是 Cloudflare 账户级限制）。
-- **Cloudflare WAF 的 IP allow/block 列表**。
-
-这些是不同层；各自看 Cloudflare 的文档。
+1. **`429` 严格遵守 `Retry-After`**——在那个时间之前别重试。
+2. **任何 `cf-mitigated` 都别自动重试**——WAF 在模式匹配，同模式重试只会一直被挡。
+3. **`429` 用指数退避加 jitter**——避免惊群。
+4. **多 token 隔离 CI job**——每把 token 是独立配额池。
+5. **监控 `cf-mitigated` 比例**——比例突增 = 客户端模式或 IP 信誉变化，不是配额问题。
 
 ---
 
-## 来源
+## 不在本文
 
-- REST API 每用户限流：
-  <https://developers.cloudflare.com/fundamentals/api/reference/limits/>
-- 按产品的 HTTP 上限：
-  - Workers：<https://developers.cloudflare.com/workers/platform/limits/>
-  - KV：<https://developers.cloudflare.com/kv/platform/limits/>
-  - R2：<https://developers.cloudflare.com/r2/platform/limits/>
-  - D1：<https://developers.cloudflare.com/d1/platform/limits/>
-- Free / Pro / Business / Enterprise 套餐价格：
-  <https://www.cloudflare.com/plans>
-- `cf-mitigated`（WAF / 滥用检测语义）：
-  <https://developers.cloudflare.com/fundamentals/reference/protections/>
+- **DDoS 防护** —— 和限速是不同层。
+- **Bot Management 产品**（Bot Fight Mode / Super Bot Fight Mode / Enterprise Bot Management）—— Cloudflare 卖的套餐，默认不开。
+- **域名上自配的 rate limit 规则配置** —— 在 Cloudflare dashboard 看。
+- **WAF IP allow/block 列表** —— 不同层。
+
+各看 Cloudflare 自己的文档。

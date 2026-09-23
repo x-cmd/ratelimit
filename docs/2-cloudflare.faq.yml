@@ -4,35 +4,62 @@ id: x-ratelimit-2-cloudflare
   - name:
       en: cloudflare
     qa:
+      - id: cloudflare-status-cf-mitigated-matrix
+        question:
+          en: How do I read a Cloudflare response — status code or cf-mitigated?
+        answer:
+          en: |
+            **Both axes — not status code alone.**
+
+            | Status | cf-mitigated | Meaning |
+            |---|---|---|
+            | 429 | (none) | REST API quota: 1200 req / 5 min / token |
+            | 429 | rate-limit | Zone-level rate-limit rule |
+            | 403 | challenge | WAF challenge (CAPTCHA / JS) |
+            | 403 | block | WAF direct block |
+            | 403 | bot | Bot Management triggered |
+            | 403 | ip | IP-based rule |
+            | 403 | country | Country-based rule |
+            | 200 | challenge | JS challenge page (HTML) |
+
+            The (status, cf-mitigated) pair tells you what kind of
+            response it is. Status alone is ambiguous: 429 can be
+            quota or rate-limit rule; 403 can be any of challenge /
+            block / bot / ip / country.
+        confidence: 10
+        reference:
+          - docs/2-cloudflare.en.md
+
       - id: cloudflare-rest-quota-free-vs-pro
         question:
           en: Is Cloudflare's REST API quota different between Free and Pro?
         answer:
           en: |
-            No — both Free and Pro get 1200 requests / 5 min /
-            user. The differentiation between plans is on the
+            No — both Free and Pro get 1200 requests / 5 min / API
+            token. The differentiation between plans is on the
             consumer side (HTTP request caps per zone, Workers
-            quota, KV/R2/D1 limits), not on the operator-side
-            API quota. Enterprise plans have custom quotas
-            negotiated separately.
+            quota, KV/R2/D1 limits), not on the operator-side API
+            quota. Enterprise plans have custom quotas negotiated
+            separately.
         confidence: 10
         reference:
           - docs/2-cloudflare.en.md
 
-      - id: cloudflare-cf-mitigated-vs-429
+      - id: cloudflare-per-token-quota-mechanic
         question:
-          en: How do I tell the difference between a 429 rate-limit and a `cf-mitigated` challenge?
+          en: What does "per user" mean in Cloudflare's 1200 req / 5 min limit?
         answer:
           en: |
-            429 = rate limit. The client made too many requests;
-            honor `Retry-After` and back off. `cf-mitigated: challenge|block`
-            = abuse defense. Cloudflare detected patterns it
-            considers abusive (User-Agent strings, automation
-            patterns, burst frequency); this is NOT a rate limit
-            and retrying immediately usually makes it worse.
-            Different handling: 429 = sleep + retry; cf-mitigated
-            = back off significantly or rotate identity.
-        confidence: 9
+            **Per API token, not per Cloudflare account.**
+
+            - One API token = one independent 1200 req / 5 min quota
+            - Two API tokens = two independent quotas
+            - CI teams give each job its own token so a runaway job
+              doesn't take out the fleet
+            - Legacy Global API Key (pre-2024) is single-shared —
+              all scripts using it share one quota; that's why
+              legacy CI keeps hitting 429
+        confidence: 10
         reference:
           - docs/2-cloudflare.en.md
 
@@ -42,11 +69,41 @@ id: x-ratelimit-2-cloudflare
         answer:
           en: |
             Integer seconds (e.g., `Retry-After: 60`). Cloudflare
-            does NOT consistently emit X-RateLimit-* headers —
-            many endpoints return only 429 + Retry-After when
-            rate-limited. Watch for the response status, not
-            the headers, as the primary signal.
-        confidence: 8
+            does NOT emit `X-RateLimit-*` / `X-RateLimit-Reset`
+            like GitHub does. Watch the response status (429) +
+            Retry-After; those are the only reliable signals.
+        confidence: 9
+        reference:
+          - docs/2-cloudflare.en.md
+
+      - id: cloudflare-cf-mitigated-recovery
+        question:
+          en: How do I recover from a Cloudflare cf-mitigated block?
+        answer:
+          en: |
+            **Don't auto-retry.** cf-mitigated is pattern-matching
+            by Cloudflare's WAF / Bot Management; retrying with the
+            same client pattern keeps getting blocked.
+
+            Recovery steps:
+
+            1. **Slow cadence** — add human-like jitter to request
+               timing.
+            2. **Change User-Agent** — `python-requests/2.31.0` and
+               `curl/8.4.0` are naked signals; real browsers send
+               `Mozilla/5.0 ...`.
+            3. **Rotate IP** — datacenter IPs and Tor exits have
+               bad reputation.
+            4. **Solve the challenge** — for `cf-mitigated:
+               challenge` (not `block`), you may complete a CAPTCHA
+               or JS challenge.
+            5. **Different network** — same IP may keep getting
+               flagged; switch networks.
+
+            For `cf-mitigated: block`, there is no recovery path
+            from within the response — you must change client
+            identity (UA, IP) or pattern.
+        confidence: 9
         reference:
           - docs/2-cloudflare.en.md
 
@@ -58,100 +115,26 @@ id: x-ratelimit-2-cloudflare
             Different optimization targets.
 
             **Cloudflare wins on developer experience and global
-            reach.** One-click setup, free tier, 200+ cities
-            anycast network. Strengths: DDoS protection (built-in,
-            no extra cost), Workers for edge compute, R2 for
-            S3-compatible storage, KV for low-latency key-value.
-            Best for: greenfield projects, multi-cloud, edge-
-            first architectures.
+            reach.** One-click setup, free tier, 200+ city anycast
+            network. Strengths: DDoS protection (built-in, no extra
+            cost), Workers for edge compute, R2 for S3-compatible
+            storage, KV for low-latency key-value. Best for:
+            greenfield projects, multi-cloud, edge-first
+            architectures.
 
             **AWS CloudFront wins on AWS-stack integration.** If
-            you're already on AWS (S3, Lambda, IAM, ACM
-            certificates), CloudFront ties in natively: signed
-            URLs from S3, Lambda@Edge for request transforms,
-            AWS Shield Advanced for higher-tier DDoS. Best for:
-            AWS-centric stacks where every other piece of infra
-            is already in AWS.
+            you're already on AWS (S3, Lambda, IAM, ACM certs),
+            CloudFront ties in natively: signed URLs from S3,
+            Lambda@Edge for request transforms, AWS Shield Advanced
+            for higher-tier DDoS. Best for: AWS-centric stacks
+            where every other piece of infra is already in AWS.
 
             **Rate-limit comparison is irrelevant for serving
-            traffic** (both are unmetered for normal HTTP
-            serving); the difference matters when you call
-            CloudFront's API to invalidate caches or create
-            distributions. Cloudflare's API is friendlier; AWS
-            has stricter throttling on management-API calls.
+            traffic** (both are unmetered for normal HTTP serving);
+            the difference matters when you call CloudFront's API
+            to invalidate caches or create distributions.
+            Cloudflare's API is friendlier; AWS has stricter
+            throttling on management-API calls.
         confidence: 8
         reference:
           - docs/2-cloudflare.en.md
-
-      - id: cloudflare-vs-aliyun-cdn
-        question:
-          en: Cloudflare or Aliyun CDN for a global site with mainland China traffic?
-        answer:
-          en: |
-            **Aliyun CDN is the better choice for mainland China
-            users.** ICP-registered domains in China get the best
-            latency through Aliyun's mainland PoPs. Aliyun's CDN
-            pricing is also lower than Cloudflare for high-volume
-            mainland traffic.
-
-            **Cloudflare's mainland-China story is via
-            Cloudflare China Network (CCN)**, a partnership with
-            JD Cloud that requires ICP registration and a separate
-            onboarding. Without CCN, mainland users hit Cloudflare's
-            HK or Singapore PoPs with higher latency.
-
-            **For a non-China audience**, Cloudflare wins on the
-            same merits as the AWS comparison (DX, global anycast).
-
-            A practical hybrid: Cloudflare as the global edge,
-            Aliyun CDN as the mainland China edge, with DNS
-            geolocation routing the right users to the right edge.
-            This is common for cross-border products.
-        confidence: 8
-        reference:
-          - docs/2-cloudflare.en.md
-          - docs/2-aliyun.en.md
-
-      - id: cloudflare-vs-vercel
-        question:
-          en: Cloudflare or Vercel?
-        answer:
-          en: |
-            Different layers. They're complementary, not
-            competitors — you can put a Vercel-deployed frontend
-            behind Cloudflare's edge without conflict.
-
-            **Cloudflare is infrastructure.** CDN, DNS, DDoS
-            protection, WAF, edge compute via Workers. You point
-            your domain at Cloudflare's nameservers and Cloudflare
-            sits in front of whatever origin you run.
-
-            **Vercel is a frontend deployment platform.** Git-push
-            to deploy, automatic preview deploys per branch, edge
-            runtime via Edge Functions. Best DX for Next.js (the
-            team behind Next.js also builds Vercel), Astro, and
-            similar frameworks.
-
-            **When to pick Cloudflare alone:** you want edge / CDN /
-            DDoS protection in front of any origin (your own VPS,
-            AWS, anywhere).
-
-            **When to pick Vercel alone:** your project is a
-            frontend (Next.js, Astro, etc.) and you want zero-
-            config git-push deploys with preview branches.
-
-            **When to use both:** Vercel for frontend deploys,
-            Cloudflare in front for DNS / DDoS / additional edge
-            logic. Common pattern for production SaaS.
-
-            **Rate-limit comparison:** Cloudflare's edge is
-            unmetered for normal traffic; Vercel has 100
-            deployments/day on Hobby plan (limits expansion)
-            and 100 GB-hours / month of function execution. If
-            you're deploying a lot, Vercel's deployment cap is the
-            real constraint, not Cloudflare's traffic serving.
-        confidence: 9
-        reference:
-          - docs/2-cloudflare.en.md
-          - docs/5-vercel.en.md
-
