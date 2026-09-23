@@ -1,8 +1,8 @@
 ---
-x-title: Rate-limit response headers — cross-service quick reference
-x-desc: Cross-service quick reference: GitHub (X-RateLimit-*), Cloudflare (Retry-After + cf-mitigated), Bing/IndexNow, Yahoo, DuckDuckGo, Baidu, Shenma — what headers each service uses to signal rate limiting.
+x-title: Rate-limit response headers — X-RateLimit-* / Retry-After / cf-mitigated / RateLimit-* draft
+x-desc: Cross-service rate-limit response header matrix: GitHub sends full X-RateLimit-* family (Reset is UNIX epoch); Cloudflare sends Retry-After + cf-mitigated (no X-RateLimit-*); Bing / Yahoo / DuckDuckGo / Baidu / Shenma mostly bare 429; IETF RateLimit-* draft is the no-X-prefix emerging standard.
 x-sidebar: Rate-limit response headers
-x-keywords: ratelimit, response headers, retry-after, x-ratelimit, cf-mitigated, http headers, 429, 403
+x-keywords: rate limit, ratelimit, response headers, retry-after, x-ratelimit, cf-mitigated, http headers, 429, 403, cross-service, cross-vendor
 x-json-ld:
   '@context': https://schema.org
   '@graph':

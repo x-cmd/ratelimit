@@ -1,8 +1,8 @@
 ---
-x-title: 速率限制响应头 —— 跨服务速查
-x-desc: 跨服务速查：GitHub（X-RateLimit-*）、Cloudflare（Retry-After + cf-mitigated）、Bing/IndexNow、Yahoo、DuckDuckGo、Baidu、Shenma 各用什么 header 告诉你限速了。
+x-title: 速率限制响应头 —— X-RateLimit-* / Retry-After / cf-mitigated / RateLimit-* 草案
+x-desc: 跨服务速率限制响应头对照：GitHub 发 X-RateLimit-* 全套（Reset 是 UNIX epoch）；Cloudflare 发 Retry-After + cf-mitigated（不发 X-RateLimit-*）；Bing/Yahoo/DuckDuckGo/Baidu/Shenma 多为裸 429；IETF RateLimit-* 草案是无 X- 前缀的新规范。
 x-sidebar: 速率限制响应头速查
-x-keywords: ratelimit, response headers, retry-after, x-ratelimit, cf-mitigated, http headers, 429, 403
+x-keywords: 速率限制, ratelimit, response headers, retry-after, x-ratelimit, cf-mitigated, http headers, 429, 403, 跨服务, 跨厂商
 x-json-ld:
   '@context': https://schema.org
   '@graph':

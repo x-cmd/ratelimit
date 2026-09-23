@@ -1,8 +1,8 @@
 ---
-x-title: Cloudflare rate limits — quick reference (status code + cf-mitigated)
-x-desc: When Cloudflare returns an error, read it as (status code, cf-mitigated header): 429 + Retry-After = rate limit; 403 + cf-mitigated = WAF / Bot blocking. Full cheatsheet + per-product quotas + client handling.
+x-title: Cloudflare rate limits — 1200/5min/token + status × cf-mitigated matrix
+x-desc: Cloudflare rate limits: REST API 1200/5min per token + per-product HTTP caps (Workers/KV/R2/D1). How to read the (status code, cf-mitigated header) pair: 429 + Retry-After = rate limit; 403 + cf-mitigated = WAF / Bot blocking.
 x-sidebar: Cloudflare rate limits
-x-keywords: cloudflare, ratelimit, qps, api quota, workers, free tier, cf-mitigated, retry-after, 429, 403
+x-keywords: cloudflare, rate limit, ratelimit, qps, api quota, workers, free tier, cf-mitigated, retry-after, 429, 403
 x-json-ld:
   '@context': https://schema.org
   '@graph':

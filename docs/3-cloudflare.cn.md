@@ -1,8 +1,8 @@
 ---
-x-title: Cloudflare 速率限制 —— 速查（status × cf-mitigated 组合）
-x-desc: Cloudflare 出错时怎么读 (status code, cf-mitigated header) 二元组：429 + Retry-After 是速率限制；403 + cf-mitigated 是 WAF / Bot 挡机器人。完整速查表 + 各产品配额 + 客户端处理。
+x-title: Cloudflare 速率限制 —— 1200/5min/token + status × cf-mitigated 二元组
+x-desc: Cloudflare 速率限制：REST API 1200/5min/token + 各产品 HTTP 上限（Workers/KV/R2/D1）。怎么读 (status code, cf-mitigated header) 二元组：429 + Retry-After 是速率限制；403 + cf-mitigated 是 WAF / Bot 挡机器人。
 x-sidebar: Cloudflare 速率限制
-x-keywords: cloudflare, ratelimit, qps, api 配额, workers, 免费套餐, cf-mitigated, retry-after, 429, 403
+x-keywords: cloudflare, 速率限制, ratelimit, qps, api 配额, workers, 免费套餐, cf-mitigated, retry-after, 429, 403
 x-json-ld:
   '@context': https://schema.org
   '@graph':
