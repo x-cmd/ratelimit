@@ -1,6 +1,6 @@
 ---
-x-title: GitHub —— 速率限制以及如何用替代方案避免受限
-x-desc: GitHub 的主速率限制（认证 REST 5000/小时，未认证 60/小时，搜索 30/分钟，GraphQL 5000 点/小时，Actions 1000/小时），二级速率触发与响应头（X-RateLimit-*）。文末附 4 行速查表，对比 5 种下载暴露面（Releases API / HTML / archive tarball / raw / CDN）以及哪些计入 API 配额。
+x-title: GitHub 速率限制 —— 速查（5 种限速 + 5 种下载暴露面）
+x-desc: 速查表：GitHub 5 种限速（REST 5000/小时、GraphQL 5000 点/小时、Search 30/分钟、Actions 1000/小时、二级启发式）+ 5 种下载暴露面（Releases API / HTML / archive / raw / CDN），其中只有 Releases API 计入 API 配额。
 x-sidebar: GitHub 速率限制 + 替代方案
 x-keywords: github, ratelimit, api 配额, rest api, graphql, actions, 二级速率限制, x-ratelimit, oauth, github app, releases api, codeload, raw.githubusercontent.com, jsdelivr
 x-json-ld:
@@ -8,157 +8,122 @@ x-json-ld:
   '@graph':
     - '@type': TechArticle
       headline: 'GitHub 速率限制'
-      inLanguage: 'cn'
+      inLanguage: 'zh-CN'
       about: 'GitHub API 速率限制跨 REST、GraphQL、Search、Actions 和二级'
 ---
 
-# GitHub 速率限制
-
-GitHub 是文档化最好的速率限制故事之一，跨主流 API 提供商。五个面
-重要：
-
-1. **主 REST** —— 5000/小时 认证，60/小时 未认证。
-2. **GraphQL** —— 5000 点/小时，cost-based。
-3. **Search** —— 30/分钟，与 REST 主分开。
-4. **Actions API** —— 1000/小时/repo。
-5. **二级** —— 启发式滥用检测速率限制。
-
-外加五种**下载暴露面**（Releases API、HTML 抓取、archive tarball、
-raw 内容、CDN 镜像）—— 只有一个计入 GitHub API 预算。文末速查表，
-FAQ 里有完整策略与取舍（eget 策略、gitattributes、云开发环境）。
+# GitHub 速率限制 —— 速查（5 种限速 + 5 种下载暴露面）
 
 ---
 
-## 主 REST API 速率限制
+## 速查
 
-| 认证面 | 限制 | 单次 | 每 |
+### 一、5 种速率限制一览
+
+| 限速面 | 认证 | 上限 | 窗口 | 单位 |
+| --- | --- | --- | --- | --- |
+| **Primary REST** | PAT / OAuth / GitHub App | 5000 req | 1 小时 | token / installation |
+| **Primary REST** | 无 | 60 req | 1 小时 | 源 IP |
+| **GraphQL** | 任意 | 5000 点 | 1 小时 | token / installation（cost-based） |
+| **Search** | 任意 | 30 req | 1 分钟 | 用户 |
+| **Actions API** | 任意 | 1000 req | 1 小时 | 仓库 |
+| **二级** | — | 启发式 | — | 滥用检测 |
+
+**单位 key**：PAT / OAuth / user-to-server 是 **per token**（多 token = 多倍预算）；GitHub App 是 **per installation**（多 installation = 多倍聚合）；Search / Actions / GraphQL / REST core **分桶**，`X-RateLimit-Resource` header 告诉你当前桶。
+
+### 二、5 种下载暴露面（**只有 Releases API 计入 API 配额**）
+
+| 暴露面 | URL | 计入 API 配额？ | 适用 |
 | --- | --- | --- | --- |
-| 未认证 | 60 req | 1 小时 | 源 IP |
-| 个人访问 token（PAT） | 5,000 req | 1 小时 | token |
-| OAuth app（用户 token） | 5,000 req | 1 小时 | token |
-| GitHub App user-to-server | 5,000+ req | 1 小时 | installation |
-| GitHub App server-to-server | 5,000+ req | 1 小时 | installation |
+| **Releases API** | `api.github.com/...` | ✅ 是（5000/小时 auth） | 列出 release、找资产 URL |
+| **HTML 抓取** | `github.com/.../releases/...` | ⚠️ 是（未文档化 UI 限流，~数百/小时/IP） | API 耗尽的一次性回退 |
+| **Archive tarball** | `codeload.github.com/.../tar.gz/refs/...` 或 `github.com/.../archive/.../tar.gz` | ❌ 否（Fastly CDN） | 已知 ref 的整仓快照（≤100 MB） |
+| **Raw 内容** | `raw.githubusercontent.com/...` | ❌ 否（Fastly CDN） | 按路径单文件抓取 |
+| **CDN 镜像** | `cdn.jsdelivr.net/gh/...` / `cdn.statically.io/gh/...` / `gcore.jsdelivr.net/gh/...` | ❌ 否（CDN 级） | GitHub 慢 / 节流 / 不可达时的回退 |
 
-5,000/小时上限在 OAuth / PAT / user-to-server 间相同。**GitHub Apps
-可通过 `increasing-api-quota-for-github-apps` 申请表请求更高配额**，
-但对典型工作流 5,000/小时够了。
+**核心策略**：1 个 API 调用列出 release + CDN 拉资产 = API 预算 1 次，下载无限。
 
-### "Per token" 对 OAuth / PAT 的含义
+```sh
+# 第 1 步：列出 release（1 个 API 调用）
+curl -H "Authorization: Bearer $TOKEN" \
+     'https://api.github.com/repos/x-cmd/x-cmd/releases?per_page=100'
 
-配额是 **per token** 而非 per user。一个有 3 个 PAT 的用户拿到 3 个独立
-的 5,000/小时 配额。这对 CI 隔离有用：每个工作流一个 PAT，每个工作流一个
-预算。
+# 第 2 步：下载（CDN，无 API 成本）
+curl -L -o release.tar.gz \
+     https://github.com/x-cmd/x-cmd/archive/refs/tags/v1.0.0.tar.gz
 
-### GitHub Apps：per-installation 配额
+# 第 3 步：单文件（CDN，无 API 成本）
+curl -L -o README.md \
+     https://raw.githubusercontent.com/x-cmd/x-cmd/v1.0.0/README.md
+```
 
-GitHub Apps 有 **per-installation** 配额 —— 5,000/小时计入 installation
-而非 app 整体。如果你的 app 安装在 100 个 installation 上，你实际上最多
-拿 500,000/小时 聚合，但每个 installation 的配额独立追踪。
+### 三、关键响应头
 
-## GraphQL API
+| Header | 含义 | 何时 |
+| --- | --- | --- |
+| `X-RateLimit-Limit` | 当前桶总额 | 每次响应 |
+| `X-RateLimit-Remaining` | 剩余 | 每次响应 |
+| `X-RateLimit-Reset` | **UNIX 时间戳**（不是"还剩 N 秒"） | 每次响应 |
+| `X-RateLimit-Used` | 已用 | 每次响应 |
+| `X-RateLimit-Resource` | 当前桶（`core` / `search` / `graphql` 等） | 每次响应 |
+| `Retry-After` | 整数秒 | 429 时 |
 
-GraphQL 用 **cost-based** 配额：5,000 点/小时 per token-or-installation。
-每个查询按查询中*最高成本字段*扣 1-10 点。
+**陷阱**：`X-RateLimit-Reset` 是 UNIX epoch（如 `1640000000`），不是相对值。`Retry-After` 才是相对秒数。新手常踩。
+
+### 四、429 / 403 怎么响应
+
+| 触发 | HTTP | 关键 header | 修法 |
+| --- | --- | --- | --- |
+| Primary 配额到 | 403 | `X-RateLimit-Remaining: 0` | 睡到 `X-RateLimit-Reset` |
+| Secondary 启发式触发 | 429 | `Retry-After` | 遵守 `Retry-After` + 改模式 |
+| Search 配额到 | 403 | `X-RateLimit-Resource: search` | 睡 1 分钟 + 少搜 |
+
+**注意**：Primary 和 Secondary 的 429 看起来一样——单从响应分不出哪个桶触发的。
+
+---
+
+## 正文
+
+### 一、Primary REST —— 5000/小时 token
+
+PAT / OAuth / GitHub App user-to-server 都用这个桶（GitHub App 算 installation）。配额的 key 是 **token 或 installation**，不是 GitHub 账号——3 个 PAT = 3 个独立预算。
+
+GitHub Apps 可[申请更高配额](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)，但典型工作流 5000/小时够用。
+
+### 二、GraphQL —— 5000 点/小时 cost-based
+
+每个查询按**最高成本字段**扣 1-10 点：
 
 ```graphql
 query {
   repository(name: "x-cmd", owner: "x-cmd") {
-    issues(first: 10) {       # costs 1 point
+    issues(first: 10) {       # 1 点
       nodes {
-        comments(first: 100) # costs 10 points (max)
+        comments(first: 100)  # 10 点（最高）
       }
     }
   }
 }
 ```
 
-上述查询扣 10 点（任一字段的最大值）。Connection 字段和聚合字段
-比简单字段读取贵。
+上述查询扣 **10 点**（任一字段的最高值）。Connection 字段和聚合字段比简单字段读取贵。
 
-**Pro tip**：在查询里问 `cost { totalCost }` 检查实际消耗：
+**查消耗**：query 里加 `rateLimit { cost remaining resetAt }` 字段直接读。
 
-```graphql
-query {
-  repository(...) { ... }
-  rateLimit {
-    limit
-    cost
-    remaining
-    resetAt
-  }
-}
-```
+### 三、Search / Actions / Secondary
 
-## Search API
+**Search** —— 30/分钟，独立桶。昂贵因为索引 + 排序。REST 主配额**不**覆盖 `/search/*`——分桶。
 
-`/search/*` 端点有独立、更低的配额：
+**Actions API** —— 1000/小时/repo，`/repos/<o>/<r>/actions/*` 下所有端点共用。重度轮询 Actions 的 dashboard 集成会撞。
 
-| 暴露面 | 限制 | 单次 | 每 |
-| --- | --- | --- | --- |
-| Search API（任何认证） | 30 req | 1 分钟 | 用户 |
+**二级** —— 启发式滥用检测，无公开阈值，触发条件：
+- 短时间内突发（即使主配额剩很多）
+- 并发在途请求多
+- 短时间内重复相同内容
 
-30/分钟 远低于 REST 主限制，因为搜索昂贵（索引、排序）。REST 主
-5,000/小时 配额**不**覆盖 `/search/*` —— 它们是分开的预算。
+触发时返回 429 + `Retry-After`，**跟 primary 429 看起来一样**。单从响应分不出哪个桶触发。
 
-## Actions API
-
-| 暴露面 | 限制 | 单次 | 每 |
-| --- | --- | --- | --- |
-| REST API 在 `/repos/{owner}/{repo}/actions/*` 下 | 1,000 req | 1 小时 | 仓库 |
-
-Workflow 制品下载、list-runs 与其他 Actions 相关 REST 端点共用这个
-1,000/小时/repo 配额。重度轮询 Actions 的 CI 工具（例如 dashboard 集成）
-可能撞到这个。
-
-## 二级速率限制（出其不意的那种）
-
-GitHub 在主限制之上强制 *secondary* 速率限制。它是启发式的 —— 由滥用
-样式触发：
-
-- 短时间内过多请求（无论主配额剩余）。
-- 并发在途请求。
-- 短时间内重复请求相同内容。
-
-触发时 GitHub 返回：
-
-```http
-HTTP/1.1 429 Too Many Requests
-Retry-After: 60
-X-RateLimit-Reset: 1640000000
-```
-
-没有"你还有 N 个 secondary 请求"的文档化头。触发条件在
-[GitHub blog post](https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/) 描述，但精确阈值不公开。
-
-### 避免二级限制
-
-- **避免突发。** 即使主配额剩 4,000/小时，并行发 100 个请求也能触发
-  secondary。
-- **Conditional 请求。** 用 `If-None-Match` / `If-Modified-Since` 头 ——
-  GitHub 对未变资源返回 304，不消耗 API 配额。
-- **避免紧密轮询。** 别每秒轮询；指数退避。
-
-## GitHub 发的响应头
-
-REST + GraphQL 上的标准头：
-
-```http
-X-RateLimit-Limit: 5000
-X-RateLimit-Remaining: 4999
-X-RateLimit-Reset: 1640000000
-X-RateLimit-Used: 1
-X-RateLimit-Resource: core    # "core"、"search"、"graphql" 等
-Retry-After: 60                # 仅在 429 上
-```
-
-**`X-RateLimit-Reset` 是 UNIX 时间戳**，不是秒数。这是初次使用者的陷阱。
-
-`X-RateLimit-Resource` 让你知道被追踪在哪个桶上 —— 重要，当一个客户端同时用
-`/search/*`（30/分钟）和核心 REST（5,000/小时）时。
-
-## 客户端重试策略
-
-一个健壮的 GitHub 客户端：
+### 四、客户端怎么处理
 
 ```python
 import time
@@ -166,85 +131,47 @@ import requests
 
 def call_github(url, headers, max_retries=5):
     for attempt in range(max_retries):
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            return response
-        if response.status_code == 429:
-            retry_after = int(response.headers.get("Retry-After", "60"))
-            time.sleep(retry_after)
+        r = requests.get(url, headers=headers)
+        if r.status_code == 200:
+            return r
+        if r.status_code == 429:
+            # primary 或 secondary 都走 Retry-After
+            time.sleep(int(r.headers.get("Retry-After", "60")))
             continue
-        if response.status_code == 403:
-            if response.headers.get("X-RateLimit-Remaining") == "0":
-                reset_at = int(response.headers["X-RateLimit-Reset"])
-                wait = max(reset_at - time.time(), 1)
+        if r.status_code == 403:
+            if r.headers.get("X-RateLimit-Remaining") == "0":
+                # primary 配额到，睡到 reset
+                wait = max(int(r.headers["X-RateLimit-Reset"]) - time.time(), 1)
                 time.sleep(min(wait, 3600))
                 continue
-        response.raise_for_status()
+        r.raise_for_status()
     raise RateLimitExceeded()
 ```
 
-三条经验：
+要点：
 
-1. **每次请求前预检 `X-RateLimit-Remaining`。** 如果是 0，别费心 ——
-   睡到 reset。
-2. **存在 `Retry-After` 时尊重它。** Secondary 速率限制会设它；primary
-   在 429 上也会设。
-3. **本地跟踪 per-token 预算。** `X-RateLimit-Remaining` 是权威的，但你
-   不需要为查它发请求 —— 本地存计数器，每次请求扣一次。
-
----
-
-## 下载暴露面 —— 速查表
-
-同一个 `x-cmd/x-cmd` release 制品可以通过 **五个不同的 URL** 获取，
-每种有自己的速率限制故事。完整策略与取舍在 FAQ（`github-five-
-download-surfaces`）。
-
-| 暴露面 | URL | 是否计入 API 预算？ | 适用 |
-| --- | --- | --- | --- |
-| **Releases API** | `api.github.com/...` | ✅ 是（5000/小时 认证 或 60/小时 未认证） | 列出 release、找资产 URL |
-| **HTML 抓取** | `github.com/.../releases/...` | ⚠️ 是 —— 未文档化的 UI 限制，每 IP ~数百/小时 | API 耗尽时的一次性回退 |
-| **Archive tarball** | `codeload.github.com/.../tar.gz/refs/...` 或 `github.com/.../archive/.../tar.gz` | ❌ 否（Fastly CDN） | 已知 ref 的整个仓库快照（≤100 MB 上限） |
-| **Raw 内容** | `raw.githubusercontent.com/...` | ❌ 否（Fastly CDN） | 按路径单文件抓取 |
-| **CDN 镜像** | `cdn.jsdelivr.net/gh/...`、`cdn.statically.io/gh/...`、`gcore.jsdelivr.net/gh/...` | ❌ 否（CDN 级别） | GitHub 慢 / 节流 / 不可用时的回退 |
-
-**关键洞察**：只有 Releases API 计入。用 API 列出（1 个请求发现所有
-release），然后用 `codeload.github.com` 或 `raw.githubusercontent.com`
-下载 —— 都是 CDN 缓存，免于 API 预算。
-
-**策略速查** —— 对于想获取 `x-cmd/x-cmd` 每个 release 的工具：
-
-```sh
-# 第 1 步：列出 releases（1 个 API 调用）
-curl -H "Authorization: Bearer $TOKEN" \
-     'https://api.github.com/repos/x-cmd/x-cmd/releases?per_page=100'
-
-# 第 2 步：下载每个 release（CDN，无 API 成本）
-curl -L -o release.tar.gz \
-     https://github.com/x-cmd/x-cmd/archive/refs/tags/v1.0.0.tar.gz
-
-# 第 3 步：抓取单文件（CDN，无 API 成本）
-curl -L -o README.md \
-     https://raw.githubusercontent.com/x-cmd/x-cmd/v1.0.0/README.md
-```
-
-API 预算：1 个请求。CDN 下载：无限。
+1. **每次请求前查 `X-RateLimit-Remaining`**。0 就不发，睡到 reset。
+2. **遵守 `Retry-After`**。Primary 和 secondary 都设。
+3. **本地跟踪 per-token 预算**。`X-RateLimit-Remaining` 是权威的，但不要为查它发请求——本地存计数器，每次扣。
+4. **避免突发**。并行 ≤ 5-10，否则 secondary 会触发。
+5. **用 conditional request**。`If-None-Match` / `If-Modified-Since` 让 GitHub 返 304，不耗配额。
+6. **尽量 CDN**。列 release 用 API（1 次），下载用 archive / raw / CDN（不耗）。
 
 ---
 
-## 源码
+## 不在本文
 
-- 主 REST 速率限制：
-  <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
-- GraphQL 资源限制：
-  <https://docs.github.com/en/graphql/overview/resource-limitations>
-- Search API 速率限制：
-  <https://docs.github.com/en/rest/search>
-- Actions API：
-  <https://docs.github.com/en/rest/actions>
-- Secondary 速率限制博客文章（触发模式）：
-  <https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>
-- GitHub Apps 认证模型：
-  <https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app>
+- **GitHub Apps 高级配额申请流程** —— 见 [docs](https://docs.github.com/en/apps)。
+- **GraphQL 字段级成本表** —— 见 [GraphQL resource limits](https://docs.github.com/en/graphql/overview/resource-limitations)。
+- **`x eget` 实现的完整 mechanic** —— 见 FAQ `eget-comprehensive-considerations`。
 
-**验证状态**：截至 2024-11 验证以上内容。
+---
+
+## 来源
+
+- Primary REST: <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
+- GraphQL: <https://docs.github.com/en/graphql/overview/resource-limitations>
+- Search: <https://docs.github.com/en/rest/search>
+- Actions: <https://docs.github.com/en/rest/actions>
+- Secondary: <https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>
+- GitHub Apps auth: <https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app>
