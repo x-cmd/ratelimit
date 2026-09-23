@@ -73,9 +73,11 @@ x-json-ld:
 | **HTML scraping** | `github.com/.../releases/...` | ⚠️ Yes (undocumented UI limit, ~hundreds/hr/IP) | One-shot fallback when API exhausted |
 | **Archive tarball** | `codeload.github.com/.../tar.gz/refs/...` or `github.com/.../archive/.../tar.gz` | ❌ No (Fastly CDN) | Whole-repo snapshot at known ref (≤100 MB) |
 | **Raw content** | `raw.githubusercontent.com/...` | ❌ No (Fastly CDN) | Single-file fetch by path |
-| **CDN mirrors** | `cdn.jsdelivr.net/gh/...` / `cdn.statically.io/gh/...` / `gcore.jsdelivr.net/gh/...` | ❌ No (CDN-level) | Fallback when GitHub is slow / throttled / down |
+| **jsDelivr CDN mirror** | `cdn.jsdelivr.net/gh/...` (also `cdn.statically.io/gh/...` / `gcore.jsdelivr.net/gh/...`) | ❌ No (CDN-level) | **Hit the limit / GitHub slow / down — first choice** |
 
 **Core strategy**: 1 API call to list releases (the only step that counts against quota), download via CDN or raw. API quota costs 1 request, downloads unlimited.
+
+**First-choice CDN = jsDelivr** — not just a raw mirror. Also supports semver (`@1` / `@^1.2`), file combining, npm packages, multi-CDN fallback (`gcore.jsdelivr.net`), ~50M requests/month free tier. Full capabilities in FAQ [`jsdelivr-github-capabilities`](#).
 
 ```sh
 # Step 1: list releases (1 API call)

@@ -77,9 +77,11 @@ x-json-ld:
 | **HTML 抓取** | `github.com/.../releases/...` | ⚠️ 是（未文档化 UI 限流，~数百/小时/IP） | API 耗尽的一次性回退 |
 | **Archive tarball** | `codeload.github.com/.../tar.gz/refs/...` 或 `github.com/.../archive/.../tar.gz` | ❌ 否（Fastly CDN） | 已知 ref 的整仓快照（≤100 MB） |
 | **Raw 内容** | `raw.githubusercontent.com/...` | ❌ 否（Fastly CDN） | 按路径单文件抓取 |
-| **CDN 镜像** | `cdn.jsdelivr.net/gh/...` / `cdn.statically.io/gh/...` / `gcore.jsdelivr.net/gh/...` | ❌ 否（CDN 级） | GitHub 慢 / 节流 / 不可达时的回退 |
+| **jsDelivr CDN 镜像** | `cdn.jsdelivr.net/gh/...`（备用 `cdn.statically.io/gh/...` / `gcore.jsdelivr.net/gh/...`） | ❌ 否（CDN 级） | **撞限速 / GitHub 慢 / 不可达——首选** |
 
 **核心策略**：用 API 列出 release（这是唯一扣配额的一步），下载走 CDN 或 raw。API 配额只扣 1 次，下载次数不限。
+
+**首选 CDN = jsDelivr**——不只是 raw 镜像，还支持 semver（`@1` / `@^1.2`）、合并文件、npm 包、多 CDN 备份（`gcore.jsdelivr.net`）、免费额度 ~5000 万次/月。完整功能见 FAQ [`jsdelivr-github-capabilities`](#)。
 
 ```sh
 # 第 1 步：列出 release（1 个 API 调用）
