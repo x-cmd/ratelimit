@@ -18,20 +18,21 @@ x-json-ld:
 
 ## 一、5 种速率限制
 
-| 限速类型 | 认证 | 上限 | 窗口 | 单位 |
-| --- | --- | --- | --- | --- |
-| **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req | 1 小时 | 每把 token / 每装一仓 |
-| **Primary REST** | 无 | 60 req | 1 小时 | 源 IP |
-| **GITHUB_TOKEN**（GitHub Actions 默认）| `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 小时 | 每次 workflow 跑 / repo |
-| **GraphQL** | 任意 | 5000 点 | 1 小时 | 每把 token / 每装一仓（按查询成本算） |
-| **Search** | 任意 | 30 req | 1 分钟 | 用户 |
-| **Actions API** | 任意 | 1000 req | 1 小时 | 仓库 |
-| **二级** | — | 启发式 | — | 滥用检测 |
+| 限速类型 | 认证 | 上限 | 窗口 |
+| --- | --- | --- | --- |
+| **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req / token 或 installation | 1 小时 |
+| **Primary REST** | 无 | 60 req / source IP | 1 小时 |
+| **GITHUB_TOKEN**（GitHub Actions 默认）| `${{ secrets.GITHUB_TOKEN }}` | 1000 req / repo（同一 repo 的所有 workflow run 共享）| 1 小时 |
+| **GraphQL** | 任意 | 5000 点 / token（按查询成本算） | 1 小时 |
+| **Search** | 任意 | 30 req / user | 1 分钟 |
+| **Actions API** | 任意 | 1000 req / repo | 1 小时 |
+| **二级** | — | 启发式触发 | — |
 
-**配额按什么算**：
-- PAT / OAuth：按 token 算，一把 token 一个 5000/小时 的预算。**PAT 是你在 GitHub 右上角头像 → Settings → Developer settings → Personal access tokens → Generate new token 里生成的那个**——大部分脚本和 curl 用的是这个。
-- GitHub App：按 installation 算，一个仓一个预算。GitHub App 是装在某个仓或组织的第三方应用（如 Dependabot、各种 CI 工具）。
-- `${{ secrets.GITHUB_TOKEN }}`：按 workflow run / repo 算，每个 workflow run 自动一个 token，run 完销毁。配额 1000/小时/repo，**所有 Actions API 调用共享**。
+**配额按什么算**（看 "上限" 列的 `/ X` 部分）：
+- `token`：每把 token 一份独立预算。3 把 PAT = 3 个独立 5000/h 桶。**PAT 是你在 GitHub 右上角头像 → Settings → Developer settings → Personal access tokens → Generate new token 里生成的那个**——大部分脚本和 curl 用的是这个。
+- `installation`：每个 GitHub App 装一仓一份独立预算。GitHub App 是装在某个仓或组织的第三方应用（如 Dependabot、各种 CI 工具）。
+- `repo`（GITHUB_TOKEN 时）：每个 repo 一份预算，**同 repo 的所有 workflow run 共享**——一个 workflow 写炸会拖累其他 workflow。
+- `user`、`source IP`：按客户端标识分桶。
 - REST、GraphQL、Search、Actions 是 4 个独立的桶（不互相挤占）。`X-RateLimit-Resource` header 告诉你当前在哪个桶。
 
 **各限速类型 mechanic**：

@@ -18,17 +18,22 @@ x-json-ld:
 
 ## 1. The 5 rate limits at a glance
 
-| Limit | Auth | Cap | Window | Unit |
-| --- | --- | --- | --- | --- |
-| **Primary REST** | PAT (Personal Access Token) / OAuth / GitHub App | 5000 req | 1 hr | token / installation |
-| **Primary REST** | None | 60 req | 1 hr | source IP |
-| **GITHUB_TOKEN** (GitHub Actions default) | `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 hr | workflow run / repo |
-| **GraphQL** | Any | 5000 points | 1 hr | token / installation (cost-based) |
-| **Search** | Any | 30 req | 1 min | user |
-| **Actions API** | Any | 1000 req | 1 hr | repository |
-| **Secondary** | — | Heuristic | — | abuse detection |
+| Limit | Auth | Cap | Window |
+| --- | --- | --- | --- |
+| **Primary REST** | PAT (Personal Access Token) / OAuth / GitHub App | 5000 req / token or installation | 1 hr |
+| **Primary REST** | None | 60 req / source IP | 1 hr |
+| **GITHUB_TOKEN** (GitHub Actions default) | `${{ secrets.GITHUB_TOKEN }}` | 1000 req / repo (all workflow runs in repo share) | 1 hr |
+| **GraphQL** | Any | 5000 points / token (cost-based) | 1 hr |
+| **Search** | Any | 30 req / user | 1 min |
+| **Actions API** | Any | 1000 req / repo | 1 hr |
+| **Secondary** | — | Heuristic trigger | — |
 
-**Unit key**: PAT / OAuth / user-to-server is **per token** (more tokens = more budget). **PAT is what you generate at GitHub → Settings → Developer settings → Personal access tokens → Generate new token** — most scripts and curl calls use this. GitHub App is **per installation** (more installations = more aggregate budget) — GitHub Apps are third-party apps installed on a repo/org (e.g., Dependabot, CI integrations). `${{ secrets.GITHUB_TOKEN }}` is **per workflow run / repo** (each run gets its own auto-expiring token, 1000/hr/repo shared across all runs in the repo). Search / Actions / GraphQL / REST core are **separate buckets** — `X-RateLimit-Resource` header tells you which one.
+**Unit key** (read `/ X` part of the Cap column):
+- `token`: each token = independent budget. 3 PATs = 3 independent 5000/hr buckets. **PAT is what you generate at GitHub → Settings → Developer settings → Personal access tokens → Generate new token** — most scripts and curl calls use this.
+- `installation`: each GitHub App install = independent budget. GitHub Apps are third-party apps installed on a repo/org (e.g., Dependabot, CI integrations).
+- `repo` (GITHUB_TOKEN): each repo = 1 budget, **all workflow runs in that repo share** — one runaway workflow takes out the rest.
+- `user`, `source IP`: bucket by client identifier.
+- REST, GraphQL, Search, Actions are 4 separate buckets (don't compete). `X-RateLimit-Resource` header tells you which one.
 
 **Detailed mechanic per limit**:
 
