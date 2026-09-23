@@ -32,7 +32,7 @@ Cloudflare 有 **两个长得像但意思完全不同的"出错了"信号**。�
 
 ---
 
-## REST API 配额 —— 429 是从这里来的
+## REST API 配额 —— 429 是从哪里来的
 
 大多数 Cloudflare REST API 端点共享一个按用户配额：
 
@@ -85,7 +85,7 @@ Cloudflare 的 API 速率限制 key 在 **API token**（或历史集成里的 AP
 
 ---
 
-## `HTTP 429 Too Many Requests` — 你请求太快了
+## 你请求太快了，Cloudflare 怎么处理
 
 当你超出按 token 的配额（默认 1200/5min）时，Cloudflare 响应：
 
@@ -107,7 +107,7 @@ Content-Type: application/json
 
 ---
 
-## `cf-mitigated` — Cloudflare 怀疑你是机器人（不是速率限制！）
+## Cloudflare 把你当成机器人（不是速率限制，是滥用检测）
 
 当 Cloudflare 的 WAF / 滥用检测觉得你的客户端像自动化、像可疑的或像恶意的，
 它返回一个挑战页或拦截页，并设 `cf-mitigated` 头：
@@ -149,7 +149,7 @@ cf-mitigated: block
 
 ---
 
-## 客户端怎么处理 — 区分两种情况
+## 客户端遇到这两种情况怎么办
 
 一个健壮的 Cloudflare 客户端分别处理两种情况：
 
