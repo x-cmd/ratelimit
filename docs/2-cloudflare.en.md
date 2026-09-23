@@ -47,11 +47,37 @@ Cloudflare 有 **两个长得像但意思完全不同的"出错了"信号**。�
 都是 `1200 req / 5 min` —— Cloudflare 的定价差异在 API 的 *消费侧*，
 不在运营侧。
 
-### "Per user" 的含义
+### "Per user" really means "per API token" — the background
 
-Cloudflare 的 API 速率限制 key 在 **API token**（或历史集成里的 API key）。
-一个用户有两个 API token 就有两个独立配额 —— token 之间不共享。这是有意
-的：CI 任务可以各自拿自己的 token 来隔离突发。
+To understand this, you need to know what Cloudflare's API
+is:
+
+- **Cloudflare API** is the programmatic interface for
+  operating Cloudflare resources — add domains, change DNS
+  records, view Workers logs, deploy Worker code, read KV
+  data, and so on. No browser needed; do it from a script.
+- **API token** is a credential you create in
+  `dash.cloudflare.com/profile/api-tokens` — like a password,
+  but scoped: each token can have different permissions
+  (e.g., "this one only reads DNS, that one writes Workers")
+  and can be revoked individually. You can create many
+  tokens.
+
+The rate limit is keyed on **API token**, not on your
+Cloudflare account. That means:
+
+- Two API tokens = two independent 1200/5min quotas. They
+  don't share. Burning through token A doesn't touch
+  token B's budget.
+- This is by design. Common scenario: many CI / cron jobs
+  hitting Cloudflare simultaneously. Give each job its own
+  token so one runaway job doesn't take out the whole fleet.
+- The legacy single **API key** (Global API Key, pre-2024
+  integrations) is **one key for the whole account** — all
+  scripts sharing it share one quota. That's why CI teams
+  migrated to API tokens.
+
+So "per user" really means "per API token".
 
 ### 有独立配额的端点
 

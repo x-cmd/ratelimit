@@ -47,12 +47,32 @@ Cloudflare 有 **两个长得像但意思完全不同的"出错了"信号**。�
 与 Pro 的"1200 次 / 5 分钟"是 Cloudflare 有意为之 —— 套餐差异在 API
 的 *消费者侧*，不在 *操作者侧*。
 
-### "每用户"在此处是什么意思
+### "每用户"在此处是什么意思 —— 实际上 key 是 API token
 
-Cloudflare 的 API 速率限制以 **API token**（或 API key，
-对旧集成）作为键。一个用户有两把 API token 就有两个独立的配
-额 —— token 之间不共享。这是故意的：CI 任务可以各拿一把 token
-以隔离突发。
+要懂这个，得先知道 Cloudflare API 是什么：
+
+- **Cloudflare API** 是你从命令行（或代码）操作 Cloudflare 资源的入口
+  —— 加域名、改 DNS 记录、查看 Workers 日志、部署 Workers 代码、调
+  KV 数据等等。不打开浏览器，从脚本里直接操作。
+- **API token** 是你登录 Cloudflare 后在 `dash.cloudflare.com/profile/
+  api-tokens` 创建的"凭据" —— 像密码，但不是密码（可以设权限范围、
+  可以撤销、可以只读）。你可以创建很多把 token，每把 token 可以
+  设不同的权限（如"这把只能读 DNS，那把可以写 Workers"）。
+
+速率限制以 **API token** 作为键（不是以你的 Cloudflare 账号作为
+键）。这意味着：
+
+- 你创建两把 API token，每把 token 都有**自己**的 1200/5min 配额。
+  它们互相不共享。你不会因为**这把** token 用爆而拖累了**那把**
+  token 的预算。
+- 这设计是刻意的。CI / 定时任务里常见场景是"几十个 job 并发跑"——
+  你可以让**每个 CI job 拿一把自己的 token** 来隔离突发。一个
+  job 写炸了（发爆）不会拖所有 job 一起 429。
+- 旧集成（2024 年前）用的 **API key**（Global API Key）只有一把，
+  且**所有用它的脚本共享一把配额**。这就是为啥 CI 团队会被迫
+  升级到 API token 体系。
+
+所以"每用户"的"用户"，实际是"每把 API token"。
 
 ### 单独配额的端点
 
