@@ -260,3 +260,119 @@ data:
         confidence: 8
         reference:
           - docs/2-cloudflare.en.md
+
+  - name:
+      en: not covered here (separate features)
+      cn: 不在本文（独立功能）
+    qa:
+      - id: cloudflare-not-covered-ddos
+        question:
+          cn: "Cloudflare DDoS 防护是怎么样的？和速率限制是一回事吗？"
+          en: "Cloudflare DDoS protection — same as rate limiting?"
+        answer:
+          cn: |
+            **不是一回事**。DDoS 防护是独立的一层，**不在速率限制范围内**。
+
+            - **L3/L4 网络层 DDoS**：自动吸收，Cloudflare 任何套餐都包含
+            - **L7 应用层 DDoS**：通过 WAF / Rate Limiting Rules 配置
+            - **与速率限制的区别**：DDoS 防护是"恶意流量识别和吸收"，速率限制是"正常请求的配额控制"
+
+            完整文档：[Cloudflare DDoS 防护](https://developers.cloudflare.com/ddos-protection/about/)
+          en: |
+            **Not the same**. DDoS protection is a separate layer, **outside rate limiting**.
+
+            - **L3/L4 network DDoS**: auto-absorbed, included in any Cloudflare plan
+            - **L7 application DDoS**: configured via WAF / Rate Limiting Rules
+            - **Difference from rate limiting**: DDoS protection = "absorb malicious traffic"; rate limiting = "control quota of normal requests"
+
+            Full docs: [Cloudflare DDoS protection](https://developers.cloudflare.com/ddos-protection/about/)
+        confidence: 9
+        reference:
+          - https://developers.cloudflare.com/ddos-protection/about/
+
+      - id: cloudflare-not-covered-bot-management-products
+        question:
+          cn: "Cloudflare Bot Management 产品怎么选？"
+          en: "Cloudflare Bot Management products — which to choose?"
+        answer:
+          cn: |
+            三个 Bot Management 产品，**默认都不开**：
+
+            - **Bot Fight Mode** —— Free 套餐自带，基础反机器人
+            - **Super Bot Fight Mode** —— Pro / Business 套餐里有，更激进（按规则分类 verified bot / likely bot / definitely bot）
+            - **Bot Management for Enterprise** —— Enterprise 套餐里的高级版（按请求计费），可以做 ML 评分
+
+            三个都跟 `cf-mitigated: bot` 相关。选哪个取决于套餐和需求。
+
+            完整对比：[Bot Management 文档](https://developers.cloudflare.com/bots/)
+          en: |
+            Three Bot Management products, **all off by default**:
+
+            - **Bot Fight Mode** — included in Free; basic anti-bot
+            - **Super Bot Fight Mode** — Pro / Business; more aggressive (categorizes verified / likely / definitely bot)
+            - **Bot Management for Enterprise** — Enterprise only; advanced (ML scoring, per-request billing)
+
+            All three relate to `cf-mitigated: bot`. Pick by plan + needs.
+
+            Full comparison: [Bot Management docs](https://developers.cloudflare.com/bots/)
+        confidence: 9
+        reference:
+          - https://developers.cloudflare.com/bots/
+
+      - id: cloudflare-not-covered-zone-rate-limit-rules
+        question:
+          cn: "Cloudflare 域名上的 rate limit 规则怎么配？"
+          en: "How to configure rate-limit rules on a Cloudflare zone?"
+        answer:
+          cn: |
+            Zone-level rate limit 规则（不是账户级 API 配额）通过 dashboard 配置：
+
+            - 路径：Cloudflare dashboard → Security → Rate limit rules → Create rule
+            - 匹配维度：IP / 国家 / 路径 / 方法 / header / cookie
+            - 触发动作：block / challenge / log / JS challenge
+            - 响应：`429` 或自定义状态码，可能带 `Retry-After`，**带 `cf-mitigated: rate-limit`**
+
+            这跟账户级 API 配额（1200/5min）独立——配的是你**自己域名**上的规则。
+
+            完整配置文档：[Rate limiting rules](https://developers.cloudflare.com/waf/rate-limiting-rules/)
+          en: |
+            Zone-level rate-limit rules (not account-level API quota) are configured via dashboard:
+
+            - Path: Cloudflare dashboard → Security → Rate limit rules → Create rule
+            - Match dimensions: IP / country / path / method / header / cookie
+            - Actions: block / challenge / log / JS challenge
+            - Response: `429` or custom status, may have `Retry-After`, **has `cf-mitigated: rate-limit`**
+
+            This is independent of account-level API quota (1200/5min) — it's rules on **your own domain**.
+
+            Full config docs: [Rate limiting rules](https://developers.cloudflare.com/waf/rate-limiting-rules/)
+        confidence: 9
+        reference:
+          - https://developers.cloudflare.com/waf/rate-limiting-rules/
+
+      - id: cloudflare-not-covered-waf-ip-rules
+        question:
+          cn: "Cloudflare WAF IP allow/block 列表怎么配？"
+          en: "How to configure Cloudflare WAF IP allow/block lists?"
+        answer:
+          cn: |
+            WAF IP rules 是 zone 级别的访问控制（不是速率限制）：
+
+            - 路径：Cloudflare dashboard → Security → WAF → Tools → IP Access Rules
+            - 维度：IP / CIDR / 国家 / ASN
+            - 动作：block / challenge / allow / log / skip
+            - 触发不消耗账户 API 配额（独立于速率限制）
+
+            完整文档：[IP access rules](https://developers.cloudflare.com/waf/tools/ip-access-rules/)
+          en: |
+            WAF IP rules are zone-level access controls (not rate limits):
+
+            - Path: Cloudflare dashboard → Security → WAF → Tools → IP Access Rules
+            - Dimensions: IP / CIDR / country / ASN
+            - Actions: block / challenge / allow / log / skip
+            - Doesn't consume account API quota (independent of rate limiting)
+
+            Full docs: [IP access rules](https://developers.cloudflare.com/waf/tools/ip-access-rules/)
+        confidence: 9
+        reference:
+          - https://developers.cloudflare.com/waf/tools/ip-access-rules/

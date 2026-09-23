@@ -547,3 +547,75 @@ data:
         confidence: 9
         reference:
           - docs/1-github.en.md
+
+  - name:
+      en: not covered here (separate features)
+      cn: 不在本文（独立功能）
+    qa:
+      - id: github-not-covered-apps-higher-quota
+        question:
+          cn: "GitHub Apps 怎么申请更高的 API 配额？"
+          en: "How to request higher API quota for GitHub Apps?"
+        answer:
+          cn: |
+            GitHub Apps 可通过 `increasing-api-quota-for-github-apps` 表单申请比默认 5000/h 更高的配额。
+
+            申请条件：
+            - 必须是 GitHub App（不是 PAT / OAuth）
+            - 有合理使用案例
+            - 通常需通过 GitHub 审核
+
+            申请流程和表单：[Increasing API quota for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)
+
+            实际绝大多数工作流 5000/h 足够用，不需要申请。
+          en: |
+            GitHub Apps can request higher than default 5000/hr via the `increasing-api-quota-for-github-apps` form.
+
+            Conditions:
+            - Must be a GitHub App (not PAT/OAuth)
+            - Reasonable use case
+            - Usually requires GitHub review
+
+            Application form and process: [Increasing API quota for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)
+
+            Most workflows don't need this; 5000/hr is enough.
+        confidence: 9
+        reference:
+          - https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app
+
+      - id: github-not-covered-graphql-field-cost
+        question:
+          cn: "GitHub GraphQL 各字段的成本表？"
+          en: "GitHub GraphQL field cost table?"
+        answer:
+          cn: |
+            GitHub 官方文档列了每个 GraphQL 字段的成本（1-10 点）：
+
+            - **Connection 字段**（如 `issues.first`、`comments.first`）：1-10 点
+            - **Aggregation 字段**（如 `reactions.groupBy`）：更贵
+            - **Object 字段**（如 `repository.name`）：1 点
+
+            优化技巧：
+            - 减少嵌套深度
+            - 用显式分页（带 cursor）而非深度 `first`
+            - 避免在单查询里 fetch 太多 connection
+            - 看 `rateLimit { cost }` 字段确认实际成本
+
+            完整字段成本表：[GraphQL resource limitations](https://docs.github.com/en/graphql/overview/resource-limitations)
+          en: |
+            GitHub's official docs list cost for each GraphQL field (1-10 points):
+
+            - **Connection fields** (e.g., `issues.first`, `comments.first`): 1-10 points
+            - **Aggregation fields** (e.g., `reactions.groupBy`): more expensive
+            - **Object fields** (e.g., `repository.name`): 1 point
+
+            Optimization tips:
+            - Reduce nesting depth
+            - Use explicit pagination (with cursor) instead of deep `first`
+            - Avoid fetching too many connections in one query
+            - Check `rateLimit { cost }` field for actual cost
+
+            Full field cost table: [GraphQL resource limitations](https://docs.github.com/en/graphql/overview/resource-limitations)
+        confidence: 9
+        reference:
+          - https://docs.github.com/en/graphql/overview/resource-limitations
