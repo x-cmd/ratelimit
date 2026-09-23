@@ -199,3 +199,110 @@ data:
         confidence: 7
         reference:
           - docs/2-rate-limit-headers-cheatsheet.cn.md
+
+  - name:
+      en: not covered here (separate features)
+      cn: 不在本文（独立功能）
+    qa:
+      - id: not-covered-specific-rate-limits
+        question:
+          cn: "GitHub / Cloudflare / Bing 等的具体速率限制数字是多少？"
+          en: "What are the specific rate-limit numbers for GitHub / Cloudflare / Bing / etc?"
+        answer:
+          cn: |
+            本文是**跨服务响应头速查**，不列具体配额数字。
+
+            具体配额见各服务专门文章：
+            - **GitHub**：5000 req/h token、30 req/min Search、1000 req/h/repo Actions、1000 req/h/repo GITHUB_TOKEN 等——见 [1-github](1-github) §一
+            - **Cloudflare**：1200 req/5min/token REST API、Workers/KV/R2/D1 各产品上限——见 [3-cloudflare](3-cloudflare) §一 §二 §三
+            - **Bing / IndexNow / Yahoo / DuckDuckGo / Baidu / Shenma**：见后续专门文章
+
+            数字会随服务升级变化——直接看官方文档最准：
+            - GitHub: <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
+            - Cloudflare: <https://developers.cloudflare.com/fundamentals/api/reference/limits/>
+          en: |
+            This article is a **cross-service header quick reference**, not a rate-limit numbers reference.
+
+            Specific numbers in each service's dedicated article:
+            - **GitHub**: 5000 req/h token, 30 req/min Search, 1000 req/h/repo Actions, 1000 req/h/repo GITHUB_TOKEN — see [1-github](1-github) §1
+            - **Cloudflare**: 1200 req/5min/token REST API, per-product caps for Workers/KV/R2/D1 — see [3-cloudflare](3-cloudflare) §1 §2 §3
+            - **Bing / IndexNow / Yahoo / DuckDuckGo / Baidu / Shenma**: see future dedicated articles
+
+            Numbers change as services upgrade — official docs are most accurate:
+            - GitHub: <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
+            - Cloudflare: <https://developers.cloudflare.com/fundamentals/api/reference/limits/>
+        confidence: 10
+        reference:
+          - docs/1-github.cn.md
+          - docs/3-cloudflare.cn.md
+
+      - id: not-covered-handling-429
+        question:
+          cn: "怎么应对 429 / cf-mitigated？"
+          en: "How to handle 429 / cf-mitigated responses?"
+        answer:
+          cn: |
+            处理逻辑各服务不同：
+
+            - **GitHub**：遵守 `Retry-After`，睡到 `X-RateLimit-Reset`，避免突发——见 [1-github](1-github) §四
+            - **Cloudflare**：`429` 降速退避；`cf-mitigated` 改节奏 / UA / 换 IP（**别自动重试**）——见 [3-cloudflare](3-cloudflare) §四
+            - **其他服务**：大多裸 429，没有详细 header——降速 + 保守并发
+
+            通用经验：
+            1. 撞 429 先 sleep（30 秒到几分钟）
+            2. 客户端代码本地跟踪配额（不要每次都发请求查剩余）
+            3. 避免突发（并行 ≤ 5-10）
+            4. 用 conditional request 减少无效响应
+          en: |
+            Handling differs by service:
+
+            - **GitHub**: honor `Retry-After`, sleep until `X-RateLimit-Reset`, avoid bursts — see [1-github](1-github) §4
+            - **Cloudflare**: `429` = slow + back off; `cf-mitigated` = change cadence / UA / IP (**don't auto-retry**) — see [3-cloudflare](3-cloudflare) §4
+            - **Other services**: mostly bare 429, sparse detail — slow down + conservative concurrency
+
+            General:
+            1. On 429, sleep first (30 sec to a few min)
+            2. Local quota tracking (don't query every request)
+            3. Avoid bursts (parallel ≤ 5-10)
+            4. Conditional requests reduce wasted responses
+        confidence: 10
+        reference:
+          - docs/1-github.cn.md
+          - docs/3-cloudflare.cn.md
+
+      - id: not-covered-ietf-draft
+        question:
+          cn: "IETF RateLimit-* 草案细节？"
+          en: "IETF RateLimit-* draft details?"
+        answer:
+          cn: |
+            IETF 的 `RateLimit-*` header 草案（`draft-ietf-httpapis-ratelimit-headers`）正在向 RFC 推进：
+
+            - **`RateLimit-Limit`**：当前窗口配额上限
+            - **`RateLimit-Remaining`**：剩余请求数
+            - **`RateLimit-Reset`**：**相对秒数**（不像 GitHub 的绝对 epoch）
+            - **`RateLimit-Policy`**：policy 描述
+
+            跟 GitHub `X-RateLimit-*` 的区别：
+            - 无 `X-` 前缀
+            - `Reset` 是相对秒（不是 UNIX epoch）
+            - 描述更结构化（policy 字段）
+
+            完整草案：[draft-ietf-httpapis-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/)
+          en: |
+            IETF's `RateLimit-*` header draft (`draft-ietf-httpapis-ratelimit-headers`) is moving toward RFC:
+
+            - **`RateLimit-Limit`**: current window quota
+            - **`RateLimit-Remaining`**: requests remaining
+            - **`RateLimit-Reset`**: **relative seconds** (not absolute epoch like GitHub)
+            - **`RateLimit-Policy`**: policy description
+
+            Differences from GitHub `X-RateLimit-*`:
+            - No `X-` prefix
+            - `Reset` is relative seconds (not UNIX epoch)
+            - More structured description (policy field)
+
+            Full draft: [draft-ietf-httpapis-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/)
+        confidence: 8
+        reference:
+          - https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/

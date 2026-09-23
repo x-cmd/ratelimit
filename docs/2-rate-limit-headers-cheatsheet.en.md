@@ -145,9 +145,11 @@ Regardless of service, when you see 429 / 403:
 
 ## Not covered here
 
-- Specific rate-limit numbers per service — see [1-github](1-github) / [3-cloudflare](3-cloudflare) / future search engine articles
-- How to handle 429 / cf-mitigated — see each service's dedicated article
-- IETF `RateLimit-*` draft details — see [IETF draft-ietf-httpapis-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/)
+See FAQ (each entry has detailed reference links):
+
+- Specific rate-limit numbers per service
+- How to handle 429 / cf-mitigated
+- IETF `RateLimit-*` draft details
 
 ---
 

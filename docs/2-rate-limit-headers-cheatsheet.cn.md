@@ -145,9 +145,11 @@ RateLimit-Reset: 30
 
 ## 不在本文
 
-- 各服务的具体速率限制数字 —— 见 [1-github](1-github) / [3-cloudflare](3-cloudflare) / 各搜索引擎专门文章
-- 怎么应对 429 / cf-mitigated —— 见各服务专门文章
-- IETF `RateLimit-*` 草案细节 —— 见 [IETF draft-ietf-httpapis-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/)
+以下见 FAQ（每条都有详细参考链接）：
+
+- 各服务的具体速率限制数字
+- 怎么应对 429 / cf-mitigated
+- IETF `RateLimit-*` 草案细节
 
 ---
 
