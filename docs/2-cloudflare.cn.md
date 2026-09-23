@@ -35,7 +35,7 @@ x-json-ld:
 - **`429` + `rate-limit`** —— 域名层 rate limit 规则触发，不是账户配额。
 - **`403` + `challenge`** —— WAF 给了 challenge（CAPTCHA / JS）。解决 challenge，或改客户端模式。
 - **`403` + `block`** —— WAF 直接挡，没有解决路径。必须改客户端模式或换 IP。
-- **`403` + `bot`** —— Bot Management 触发（要 Enterprise 或 Super Bot Fight Mode）。
+- **`403` + `bot`** —— Bot Management（Cloudflare 的反机器人产品，比 WAF 更激进）触发（要 Enterprise 或 Super Bot Fight Mode 才开）。
 - **`403` + `ip` / `country`** —— IP / 国家规则触发。只能换 IP / 出口。
 - **`200` + `challenge`** —— Bot Management 给的 JS challenge 页（HTML 含 JS）。headless 浏览器能跑，curl / requests 不行。
 
