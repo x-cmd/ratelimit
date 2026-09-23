@@ -149,9 +149,11 @@ Points:
 
 ## Not covered here
 
-- **DDoS protection** — separate layer from rate limiting.
-- **Bot Management products** (Bot Fight Mode / Super Bot Fight Mode / Enterprise Bot Management) — CF-sold add-ons, off by default.
-- **Your zone-level rate-limit rule config** — see Cloudflare dashboard.
-- **WAF IP allow/block lists** — different layer.
+The following separate features (not rate limiting itself, but commonly confused) — see FAQ:
 
-See Cloudflare's own docs for each.
+- DDoS protection
+- Bot Management products (Bot Fight Mode / Super Bot Fight Mode / Enterprise Bot Management)
+- Your zone-level rate-limit rule config
+- WAF IP allow/block lists
+
+Each FAQ entry has a Cloudflare docs link + brief explanation.

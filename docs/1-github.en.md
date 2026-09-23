@@ -179,9 +179,11 @@ Fixes:
 
 ## Not covered here
 
-- **GitHub Apps higher-quota request flow** — see [docs](https://docs.github.com/en/apps).
-- **GraphQL field-level cost table** — see [GraphQL resource limits](https://docs.github.com/en/graphql/overview/resource-limitations).
-- **Full `x eget` implementation** — see FAQ `eget-comprehensive-considerations`.
+See FAQ (each entry has detailed reference links):
+
+- GitHub Apps higher-quota request flow
+- GraphQL field-level cost table
+- Full `x eget` implementation
 
 ---
 

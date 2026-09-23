@@ -149,9 +149,11 @@ def call_cloudflare(url, token, max_retries=5):
 
 ## 不在本文
 
-- **DDoS 防护** —— 和限速是不同层。
-- **Bot Management 产品**（Bot Fight Mode / Super Bot Fight Mode / Enterprise Bot Management）—— Cloudflare 卖的套餐，默认不开。
-- **域名上自配的 rate limit 规则配置** —— 在 Cloudflare dashboard 看。
-- **WAF IP allow/block 列表** —— 不同层。
+以下独立功能（不是速率限制本身，但用户经常搞混）见 FAQ：
 
-各看 Cloudflare 自己的文档。
+- DDoS 防护
+- Bot Management 产品（Bot Fight Mode / Super Bot Fight Mode / Enterprise Bot Management）
+- 域名上自配的 rate limit 规则配置
+- WAF IP allow/block 列表
+
+每条 FAQ 都给了 Cloudflare 官方文档链接 + 简短说明。

@@ -178,9 +178,11 @@ def call_github(url, headers, max_retries=5):
 
 ## 不在本文
 
-- **GitHub Apps 高级配额申请流程** —— 见 [docs](https://docs.github.com/en/apps)。
-- **GraphQL 字段级成本表** —— 见 [GraphQL resource limits](https://docs.github.com/en/graphql/overview/resource-limitations)。
-- **`x eget` 的完整实现** —— 见 FAQ `eget-comprehensive-considerations`。
+以下见 FAQ（每条都有详细参考链接）：
+
+- GitHub Apps 高级配额申请流程
+- GraphQL 字段级成本表
+- `x eget` 的完整实现
 
 ---
 
