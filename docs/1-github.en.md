@@ -30,7 +30,7 @@ x-json-ld:
 | **GITHUB_TOKEN** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 hr | workflow run / repo |
 | **Secondary** | — | Heuristic | — | abuse detection |
 
-**Unit key**: PAT / OAuth / user-to-server is **per token** (more tokens = more budget); GitHub App is **per installation** (more installations = more aggregate budget); `${{ secrets.GITHUB_TOKEN }}` is **per workflow run / repo** (each run gets its own auto-expiring token, 1000/hr/repo shared across all runs in the repo); Search / Actions / GraphQL / REST core are **separate buckets** — `X-RateLimit-Resource` header tells you which one.
+**Unit key**: PAT / OAuth / user-to-server is **per token** (more tokens = more budget). **PAT is what you generate at GitHub → Settings → Developer settings → Personal access tokens → Generate new token** — most scripts and curl calls use this. GitHub App is **per installation** (more installations = more aggregate budget) — GitHub Apps are third-party apps installed on a repo/org (e.g., Dependabot, CI integrations). `${{ secrets.GITHUB_TOKEN }}` is **per workflow run / repo** (each run gets its own auto-expiring token, 1000/hr/repo shared across all runs in the repo). Search / Actions / GraphQL / REST core are **separate buckets** — `X-RateLimit-Resource` header tells you which one.
 
 ### 2. The 5 download surfaces (**only Releases API counts against the API quota**)
 
