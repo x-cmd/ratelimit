@@ -18,14 +18,14 @@ x-json-ld:
 
 ## 一、5 种速率限制
 
-| 限速面 | 认证 | 上限 | 窗口 | 单位 |
+| 限速类型 | 认证 | 上限 | 窗口 | 单位 |
 | --- | --- | --- | --- | --- |
-| **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req | 1 小时 | token / installation |
+| **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req | 1 小时 | 每把 token / 每装一仓 |
 | **Primary REST** | 无 | 60 req | 1 小时 | 源 IP |
-| **GraphQL** | 任意 | 5000 点 | 1 小时 | token / installation（cost-based） |
+| **GraphQL** | 任意 | 5000 点 | 1 小时 | 每把 token / 每装一仓（按查询成本算） |
 | **Search** | 任意 | 30 req | 1 分钟 | 用户 |
 | **Actions API** | 任意 | 1000 req | 1 小时 | 仓库 |
-| **GITHUB_TOKEN** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 小时 | workflow run / repo |
+| **GITHUB_TOKEN** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 小时 | 每次 workflow 跑 / repo |
 | **二级** | — | 启发式 | — | 滥用检测 |
 
 **配额按什么算**：
@@ -34,7 +34,7 @@ x-json-ld:
 - `${{ secrets.GITHUB_TOKEN }}`：按 workflow run / repo 算，每个 workflow run 自动一个 token，run 完销毁。配额 1000/小时/repo，**所有 Actions API 调用共享**。
 - REST、GraphQL、Search、Actions 是 4 个独立的桶（不互相挤占）。`X-RateLimit-Resource` header 告诉你当前在哪个桶。
 
-**各限速面 mechanic**：
+**各限速类型 mechanic**：
 
 - **Primary REST** —— PAT / OAuth / GitHub App 的用户令牌都用这个桶（GitHub App 按 installation 算）。配额按 token 或 installation 算，不是按 GitHub 账号——3 把 PAT = 3 个独立预算。GitHub Apps 可[申请更高配额](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)，但典型工作流 5000/小时够用。
 
@@ -65,7 +65,7 @@ x-json-ld:
   - 并发在途请求多
   - 短时间内重复相同内容
 
-  触发时返回 429 + `Retry-After`，**跟 primary 429 看起来一样**。单从响应分不出哪个桶触发。
+  触发时返回 429 + `Retry-After`，**跟主限速 429 看起来一样**。单从响应分不出哪个桶触发。
 
 ---
 
@@ -120,7 +120,7 @@ curl -L -o README.md \
 | Secondary 启发式触发 | 429 | `Retry-After` | 遵守 `Retry-After` + 改模式 |
 | Search 配额到 | 403 | `X-RateLimit-Resource: search` | 睡 1 分钟 + 少搜 |
 
-**注意**：Primary 和 Secondary 的 429 看起来一样——单从响应分不出哪个桶触发的。
+**注意**：主限速和二级的 429 看起来一样——单从响应分不出哪个桶触发的。
 
 ```python
 import time
@@ -148,9 +148,9 @@ def call_github(url, headers, max_retries=5):
 要点：
 
 1. **每次请求前查 `X-RateLimit-Remaining`**。0 就不发，睡到 reset。
-2. **遵守 `Retry-After`**。Primary 和 secondary 都设。
+2. **遵守 `Retry-After`**。主限速和二级都设。
 3. **本地跟踪每个 token 的预算**。`X-RateLimit-Remaining` 是权威的，但不要为查它发请求——本地存计数器，每次扣。
-4. **避免突发**。并行 ≤ 5-10，否则 secondary 会触发。
+4. **避免突发**。并行 ≤ 5-10，否则二级会触发。
 5. **用 conditional request**。`If-None-Match` / `If-Modified-Since` 让 GitHub 返 304，不耗配额。
 6. **尽量 CDN**。列 release 用 API（1 次），下载用 archive / raw / CDN（不耗）。
 
@@ -168,7 +168,7 @@ def call_github(url, headers, max_retries=5):
 
 修法：
 - **用 PAT 替代**——预算是 per token，每个 workflow 用一把 PAT 互不影响。
-- **用 GitHub App 安装 token**——per installation 隔离。
+- **用 GitHub App 安装 token**——按 installation 隔离（每个仓一份独立配额）。
 - **控制并发 + 用 conditional request**——见上文第四节要点。
 
 ---
