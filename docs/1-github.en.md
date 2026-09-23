@@ -16,9 +16,7 @@ x-json-ld:
 
 ---
 
-## Quick reference
-
-### 1. The 5 rate limits at a glance
+## 1. The 5 rate limits at a glance
 
 | Limit | Auth | Cap | Window | Unit |
 | --- | --- | --- | --- | --- |
@@ -32,7 +30,42 @@ x-json-ld:
 
 **Unit key**: PAT / OAuth / user-to-server is **per token** (more tokens = more budget). **PAT is what you generate at GitHub → Settings → Developer settings → Personal access tokens → Generate new token** — most scripts and curl calls use this. GitHub App is **per installation** (more installations = more aggregate budget) — GitHub Apps are third-party apps installed on a repo/org (e.g., Dependabot, CI integrations). `${{ secrets.GITHUB_TOKEN }}` is **per workflow run / repo** (each run gets its own auto-expiring token, 1000/hr/repo shared across all runs in the repo). Search / Actions / GraphQL / REST core are **separate buckets** — `X-RateLimit-Resource` header tells you which one.
 
-### 2. The 5 download surfaces (**only Releases API counts against the API quota**)
+**Detailed mechanic per limit**:
+
+- **Primary REST** — PAT / OAuth / GitHub App user tokens all share this bucket (GitHub Apps count per installation). The key is **token or installation**, not GitHub account — 3 PATs = 3 independent budgets. GitHub Apps can [request higher quotas](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app), but 5000/hr is enough for typical workflows.
+
+- **GraphQL** — each query costs 1-10 points depending on the **highest-cost field** in the query:
+
+  ```graphql
+  query {
+    repository(name: "x-cmd", owner: "x-cmd") {
+      issues(first: 10) {       # 1 point
+        nodes {
+          comments(first: 100)  # 10 points (max)
+        }
+      }
+    }
+  }
+  ```
+
+  The query above costs **10 points** (the max field cost). Connection fields and aggregation fields cost more than simple field reads.
+
+  **Inspect cost**: add `rateLimit { cost remaining resetAt }` field to your query.
+
+- **Search** — 30/min, separate bucket. Search is much more expensive than REST primary (every query redoes indexing + ranking). REST primary quota does **NOT** cover `/search/*` — separate bucket.
+
+- **Actions API** — 1000/hr/repo. All endpoints under `/repos/<o>/<r>/actions/*` share this. Dashboard integrations that poll Actions heavily will hit it.
+
+- **Secondary** — heuristic abuse detection, no published threshold. Triggered by:
+  - Short bursts (even with primary headroom)
+  - Concurrent in-flight requests
+  - Repeated identical-content requests in a short window
+
+  Returns 429 + `Retry-After`. **Looks identical to primary 429** — you can't tell from the response which bucket fired.
+
+---
+
+## 2. The 5 download surfaces (**only Releases API counts against the API quota**)
 
 | Surface | URL | Counts vs API quota? | Best for |
 | --- | --- | --- | --- |
@@ -42,7 +75,7 @@ x-json-ld:
 | **Raw content** | `raw.githubusercontent.com/...` | ❌ No (Fastly CDN) | Single-file fetch by path |
 | **CDN mirrors** | `cdn.jsdelivr.net/gh/...` / `cdn.statically.io/gh/...` / `gcore.jsdelivr.net/gh/...` | ❌ No (CDN-level) | Fallback when GitHub is slow / throttled / down |
 
-**Core strategy**: 1 API call to list releases + CDN to pull assets = 1 API call against budget, unbounded downloads.
+**Core strategy**: 1 API call to list releases (the only step that counts against quota), download via CDN or raw. API quota costs 1 request, downloads unlimited.
 
 ```sh
 # Step 1: list releases (1 API call)
@@ -58,7 +91,9 @@ curl -L -o README.md \
      https://raw.githubusercontent.com/x-cmd/x-cmd/v1.0.0/README.md
 ```
 
-### 3. Key response headers
+---
+
+## 3. Key response headers
 
 | Header | Meaning | When |
 | --- | --- | --- |
@@ -69,9 +104,11 @@ curl -L -o README.md \
 | `X-RateLimit-Resource` | Current bucket (`core` / `search` / `graphql` etc.) | Every response |
 | `Retry-After` | Integer seconds | On 429 |
 
-**Footgun**: `X-RateLimit-Reset` is UNIX epoch (e.g., `1640000000`), not a relative value. `Retry-After` IS relative seconds. First-time consumers conflate them.
+**Footgun**: `X-RateLimit-Reset` is UNIX epoch (e.g., `1640000000`), not a relative value. To compute remaining time: `reset - now`. `Retry-After` IS relative seconds (only on 429).
 
-### 4. 429 / 403 — how to respond
+---
+
+## 4. 429 / 403 — how to respond
 
 | Trigger | HTTP | Key header | Fix |
 | --- | --- | --- | --- |
@@ -79,68 +116,7 @@ curl -L -o README.md \
 | Secondary heuristic triggered | 429 | `Retry-After` | Honor `Retry-After` + change pattern |
 | Search quota reached | 403 | `X-RateLimit-Resource: search` | Sleep 1 min + search less |
 
-**Note**: Primary 429 and Secondary 429 look identical — you can't tell from the response which bucket fired.
-
----
-
-## Writeup
-
-### 1. Primary REST — 5000/hr per token
-
-PAT / OAuth / GitHub App user-to-server all share this bucket (GitHub Apps count per installation). The key is **token or installation**, not GitHub account — 3 PATs = 3 independent budgets.
-
-GitHub Apps can [request higher quotas](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app), but 5000/hr is enough for typical workflows.
-
-### 2. GraphQL — 5000 points/hr, cost-based
-
-Each query costs 1-10 points depending on the **highest-cost field** in the query:
-
-```graphql
-query {
-  repository(name: "x-cmd", owner: "x-cmd") {
-    issues(first: 10) {       # 1 point
-      nodes {
-        comments(first: 100)  # 10 points (max)
-      }
-    }
-  }
-}
-```
-
-The query above costs **10 points** (the max field cost). Connection fields and aggregation fields cost more than simple field reads.
-
-**Inspect cost**: add `rateLimit { cost remaining resetAt }` field to your query.
-
-### 3. Search / Actions / Secondary
-
-**Search** — 30/min, separate bucket. Expensive because of indexing + ranking. REST primary quota does **NOT** cover `/search/*`.
-
-**Actions API** — 1000/hr/repo. All endpoints under `/repos/<o>/<r>/actions/*` share this. Dashboard integrations that poll Actions heavily will hit it.
-
-**Secondary** — heuristic abuse detection, no published threshold. Triggered by:
-- Short bursts (even with primary headroom)
-- Concurrent in-flight requests
-- Repeated identical-content requests in a short window
-
-Returns 429 + `Retry-After`. **Looks identical to primary 429** — you can't tell from the response which bucket fired.
-
-### 5. GITHUB_TOKEN — the CI wall
-
-`${{ secrets.GITHUB_TOKEN }}` is GitHub Actions' auto-provided token:
-
-- Auto-created per workflow run; destroyed when the run ends.
-- On by default, no setup required.
-- **Quota: 1000 req/hr/repo** — shared across all Actions API endpoints in that repo.
-
-**CI pitfall**: N workflows running concurrently in the same repo all share GITHUB_TOKEN. They share the **single 1000/hr/repo budget**. One runaway workflow (heavy polling) takes out the rest.
-
-Fixes:
-
-- **Use a PAT instead** — per-token budget isolates each workflow.
-- **Use a GitHub App installation token** — per-installation isolation.
-- **Cap concurrency + conditional requests** — see "Client-side handling" below.
-
-### 4. Client-side handling
+**Note**: Primary and Secondary 429 look identical — you can't tell from the response which bucket fired.
 
 ```python
 import time
@@ -176,11 +152,29 @@ Points:
 
 ---
 
+## 5. GITHUB_TOKEN — the CI wall
+
+`${{ secrets.GITHUB_TOKEN }}` is GitHub Actions' auto-provided token:
+
+- Auto-created per workflow run; destroyed when the run ends.
+- On by default, no setup required.
+- **Quota: 1000 req/hr/repo** — shared across all Actions API endpoints in that repo.
+
+**CI pitfall**: N workflows running concurrently in the same repo all share GITHUB_TOKEN. They share the **single 1000/hr/repo budget**. One runaway workflow (heavy polling) takes out the rest.
+
+Fixes:
+
+- **Use a PAT instead** — per-token budget isolates each workflow.
+- **Use a GitHub App installation token** — per-installation isolation.
+- **Cap concurrency + conditional requests** — see Section 4 above.
+
+---
+
 ## Not covered here
 
 - **GitHub Apps higher-quota request flow** — see [docs](https://docs.github.com/en/apps).
 - **GraphQL field-level cost table** — see [GraphQL resource limits](https://docs.github.com/en/graphql/overview/resource-limitations).
-- **Full `x eget` implementation mechanic** — see FAQ `eget-comprehensive-considerations`.
+- **Full `x eget` implementation** — see FAQ `eget-comprehensive-considerations`.
 
 ---
 

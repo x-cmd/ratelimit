@@ -16,9 +16,7 @@ x-json-ld:
 
 ---
 
-## 速查
-
-### 一、5 种速率限制一览
+## 一、5 种速率限制
 
 | 限速面 | 认证 | 上限 | 窗口 | 单位 |
 | --- | --- | --- | --- | --- |
@@ -36,7 +34,42 @@ x-json-ld:
 - `${{ secrets.GITHUB_TOKEN }}`：按 workflow run / repo 算，每个 workflow run 自动一个 token，run 完销毁。配额 1000/小时/repo，**所有 Actions API 调用共享**。
 - REST、GraphQL、Search、Actions 是 4 个独立的桶（不互相挤占）。`X-RateLimit-Resource` header 告诉你当前在哪个桶。
 
-### 二、5 种下载暴露面（**只有 Releases API 计入 API 配额**）
+**各限速面 mechanic**：
+
+- **Primary REST** —— PAT / OAuth / GitHub App 的用户令牌都用这个桶（GitHub App 按 installation 算）。配额按 token 或 installation 算，不是按 GitHub 账号——3 把 PAT = 3 个独立预算。GitHub Apps 可[申请更高配额](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)，但典型工作流 5000/小时够用。
+
+- **GraphQL** —— 每个查询按**最高成本字段**扣 1-10 点：
+
+  ```graphql
+  query {
+    repository(name: "x-cmd", owner: "x-cmd") {
+      issues(first: 10) {       # 1 点
+        nodes {
+          comments(first: 100)  # 10 点（最高）
+        }
+      }
+    }
+  }
+  ```
+
+  上述查询扣 **10 点**（任一字段的最高值）。Connection 字段和聚合字段比简单字段读取贵。
+
+  **查消耗**：query 里加 `rateLimit { cost remaining resetAt }` 字段直接读。
+
+- **Search** —— 30/分钟，独立桶。搜索比 REST 主限速贵得多（每次都要重做索引 + 排序）。REST 主配额**不**覆盖 `/search/*`——是分开的桶。
+
+- **Actions API** —— 1000/小时/repo，`/repos/<o>/<r>/actions/*` 下所有端点共用。重度轮询 Actions 的 dashboard 集成会撞。
+
+- **二级** —— 启发式滥用检测，无公开阈值，触发条件：
+  - 短时间内突发（即使主配额剩很多）
+  - 并发在途请求多
+  - 短时间内重复相同内容
+
+  触发时返回 429 + `Retry-After`，**跟 primary 429 看起来一样**。单从响应分不出哪个桶触发。
+
+---
+
+## 二、5 种下载暴露面（**只有 Releases API 计入 API 配额**）
 
 | 暴露面 | URL | 计入 API 配额？ | 适用 |
 | --- | --- | --- | --- |
@@ -62,7 +95,9 @@ curl -L -o README.md \
      https://raw.githubusercontent.com/x-cmd/x-cmd/v1.0.0/README.md
 ```
 
-### 三、关键响应头
+---
+
+## 三、关键响应头
 
 | Header | 含义 | 何时 |
 | --- | --- | --- |
@@ -75,7 +110,9 @@ curl -L -o README.md \
 
 **陷阱**：`X-RateLimit-Reset` 是 UNIX 时间戳（像 `1640000000`），不是"还剩几秒"。要看剩余时间自己 `reset - now`。`Retry-After` 才是直接的"等几秒"，429 上才有。
 
-### 四、429 / 403 怎么响应
+---
+
+## 四、429 / 403 怎么响应
 
 | 触发 | HTTP | 关键 header | 修法 |
 | --- | --- | --- | --- |
@@ -84,66 +121,6 @@ curl -L -o README.md \
 | Search 配额到 | 403 | `X-RateLimit-Resource: search` | 睡 1 分钟 + 少搜 |
 
 **注意**：Primary 和 Secondary 的 429 看起来一样——单从响应分不出哪个桶触发的。
-
----
-
-## 正文
-
-### 一、Primary REST —— 5000/小时 token
-
-PAT / OAuth / GitHub App 的用户令牌都用这个桶（GitHub App 按 installation 算）。配额按 token 或 installation 算，不是按 GitHub 账号——3 个 PAT = 3 个独立预算。
-
-GitHub Apps 可[申请更高配额](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)，但典型工作流 5000/小时够用。
-
-### 二、GraphQL —— 5000 点/小时（按查询成本算）
-
-每个查询按**最高成本字段**扣 1-10 点：
-
-```graphql
-query {
-  repository(name: "x-cmd", owner: "x-cmd") {
-    issues(first: 10) {       # 1 点
-      nodes {
-        comments(first: 100)  # 10 点（最高）
-      }
-    }
-  }
-}
-```
-
-上述查询扣 **10 点**（任一字段的最高值）。Connection 字段和聚合字段比简单字段读取贵。
-
-**查消耗**：query 里加 `rateLimit { cost remaining resetAt }` 字段直接读。
-
-### 三、Search / Actions / Secondary
-
-**Search** —— 30/分钟，独立桶。搜索比 REST 主限速贵得多（每次都要重做索引 + 排序）。REST 主配额**不**覆盖 `/search/*`——是分开的桶。
-
-**Actions API** —— 1000/小时/repo，`/repos/<o>/<r>/actions/*` 下所有端点共用。重度轮询 Actions 的 dashboard 集成会撞。
-
-**二级** —— 启发式滥用检测，无公开阈值，触发条件：
-- 短时间内突发（即使主配额剩很多）
-- 并发在途请求多
-- 短时间内重复相同内容
-
-触发时返回 429 + `Retry-After`，**跟 primary 429 看起来一样**。单从响应分不出哪个桶触发。
-
-### 五、GITHUB_TOKEN —— CI 场景的隐性撞墙点
-
-`${{ secrets.GITHUB_TOKEN }}` 是 GitHub Actions 自动提供的 token：
-
-- 每个 workflow run 自动创建、run 结束自动销毁。
-- 默认开启，不用额外配置。
-- **配额 1000 req/小时/repo**——所有 Actions API 端点共用这一个预算。
-
-**CI 撞墙陷阱**：N 个 workflow 并发跑同一个 repo，全部用 GITHUB_TOKEN——它们**共享 1000/小时**。一个 workflow 写炸（大量轮询），其他 workflow 一起 429。
-
-修法：
-- **用 PAT 替代**——预算是 per token，每个 workflow 用一把 PAT 互不影响。
-- **用 GitHub App 安装 token**——per installation 隔离。
-- **控制并发 + 用 conditional request**——见正文「客户端怎么处理」。
-
-### 四、客户端怎么处理
 
 ```python
 import time
@@ -176,6 +153,23 @@ def call_github(url, headers, max_retries=5):
 4. **避免突发**。并行 ≤ 5-10，否则 secondary 会触发。
 5. **用 conditional request**。`If-None-Match` / `If-Modified-Since` 让 GitHub 返 304，不耗配额。
 6. **尽量 CDN**。列 release 用 API（1 次），下载用 archive / raw / CDN（不耗）。
+
+---
+
+## 五、GITHUB_TOKEN —— CI 场景的隐性撞墙点
+
+`${{ secrets.GITHUB_TOKEN }}` 是 GitHub Actions 自动提供的 token：
+
+- 每个 workflow run 自动创建、run 结束自动销毁。
+- 默认开启，不用额外配置。
+- **配额 1000 req/小时/repo**——所有 Actions API 端点共用这一个预算。
+
+**CI 撞墙陷阱**：N 个 workflow 并发跑同一个 repo，全部用 GITHUB_TOKEN——它们**共享 1000/小时**。一个 workflow 写炸（大量轮询），其他 workflow 一起 429。
+
+修法：
+- **用 PAT 替代**——预算是 per token，每个 workflow 用一把 PAT 互不影响。
+- **用 GitHub App 安装 token**——per installation 隔离。
+- **控制并发 + 用 conditional request**——见上文第四节要点。
 
 ---
 
