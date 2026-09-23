@@ -1,4 +1,4 @@
-id: x-ratelimit-6-bandwagonhost
+id: x-ratelimit-7-bandwagonhost
 
 <data>:
   - name:
@@ -21,7 +21,7 @@ id: x-ratelimit-6-bandwagonhost
             fragile and TOS-violating.
         confidence: 9
         reference:
-          - docs/6-bandwagonhost.en.md
+          - docs/7-bandwagonhost.en.md
 
       - id: bandwagonhost-bandwidth-soft-cap
         question:
@@ -36,4 +36,4 @@ id: x-ratelimit-6-bandwagonhost
             rather than expecting the cap to be raised.
         confidence: 8
         reference:
-          - docs/6-bandwagonhost.en.md
+          - docs/7-bandwagonhost.en.md

@@ -1,5 +1,5 @@
 ---
-name: 2-aliyun
+name: 4-aliyun
 description: Aliyun OpenAPI rate limits — default 100 QPS per user per API, product-specific lower limits (ECS Create, RAM, CDN), non-RFC-6585 error codes (Throttling.User / Throttling.Api / Throttling.CloudBox) requiring body parsing rather than status-code handling.
 type: reference
 ---

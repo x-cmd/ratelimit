@@ -1,5 +1,5 @@
 ---
-name: 3-tencent
+name: 5-tencent
 description: Tencent Cloud API 3.0 rate limits — 20 QPS default per user per API (tighter than Aliyun's 100), X-RateLimit-* headers (closest to IETF RateLimit-* draft among Chinese cloud providers), DescribeApiRateLimit for programmatic quota lookup.
 type: reference
 ---

@@ -1,5 +1,5 @@
 ---
-name: 5-vercel
+name: 6-vercel
 description: Vercel rate limits — function execution quotas (Hobby 100 GB-hr/mo, Pro 1000 GB-hr/mo), Edge Function invocations (500k/mo Hobby, 5M/mo Pro), REST API default 1 RPS, RFC 9745 lowercase ratelimit-* headers, distinguishing 402 (plan-cap) vs 500 (code-error) vs 504 (timeout).
 type: reference
 ---

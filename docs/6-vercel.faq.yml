@@ -1,4 +1,4 @@
-id: x-ratelimit-5-vercel
+id: x-ratelimit-6-vercel
 
 <data>:
   - name:
@@ -18,7 +18,7 @@ id: x-ratelimit-5-vercel
             memory-intensive paths.
         confidence: 9
         reference:
-          - docs/5-vercel.en.md
+          - docs/6-vercel.en.md
 
       - id: vercel-402-vs-500
         question:
@@ -34,7 +34,7 @@ id: x-ratelimit-5-vercel
             perf issue rather than correctness.
         confidence: 9
         reference:
-          - docs/5-vercel.en.md
+          - docs/6-vercel.en.md
 
       - id: vercel-edge-vs-serverless
         question:
@@ -53,7 +53,7 @@ id: x-ratelimit-5-vercel
             same plan.
         confidence: 8
         reference:
-          - docs/5-vercel.en.md
+          - docs/6-vercel.en.md
 
       - id: vercel-vs-cloudflare-pages
         question:
@@ -86,7 +86,7 @@ id: x-ratelimit-5-vercel
             for production SaaS with non-trivial edge logic.
         confidence: 8
         reference:
-          - docs/5-vercel.en.md
+          - docs/6-vercel.en.md
           - docs/1-cloudflare.en.md
 
       - id: vercel-vs-cloudflare-vs-aws-amplify
@@ -118,6 +118,6 @@ id: x-ratelimit-5-vercel
             generous.
         confidence: 8
         reference:
-          - docs/5-vercel.en.md
+          - docs/6-vercel.en.md
           - docs/1-cloudflare.en.md
 

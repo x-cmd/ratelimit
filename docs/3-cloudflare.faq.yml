@@ -1,4 +1,4 @@
-id: x-ratelimit-2-cloudflare
+id: x-ratelimit-3-cloudflare
 
 data:
   - name:
@@ -28,8 +28,8 @@ data:
             Per-product caps (Workers, KV, R2, D1) are **separate** from REST API quota.
         confidence: 10
         reference:
-          - docs/2-cloudflare.en.md
-          - docs/2-cloudflare.cn.md
+          - docs/3-cloudflare.en.md
+          - docs/3-cloudflare.cn.md
 
       - id: cloudflare-429-vs-cf-mitigated
         question:
@@ -66,8 +66,8 @@ data:
             Disambiguation: if the response has `cf-mitigated` header, it's NOT a rate limit.
         confidence: 10
         reference:
-          - docs/2-cloudflare.en.md
-          - docs/2-cloudflare.cn.md
+          - docs/3-cloudflare.en.md
+          - docs/3-cloudflare.cn.md
 
       - id: cloudflare-rest-quota-free-vs-pro
         question:
@@ -94,8 +94,8 @@ data:
             **No difference on the operator-side API quota**.
         confidence: 10
         reference:
-          - docs/2-cloudflare.en.md
-          - docs/2-cloudflare.cn.md
+          - docs/3-cloudflare.en.md
+          - docs/3-cloudflare.cn.md
 
       - id: cloudflare-per-token-quota
         question:
@@ -120,8 +120,8 @@ data:
             Legacy **Global API Key** is one shared key for the whole account — replaced by API tokens. If your CI keeps hitting 429, you might still be on Global API Key.
         confidence: 10
         reference:
-          - docs/2-cloudflare.en.md
-          - docs/2-cloudflare.cn.md
+          - docs/3-cloudflare.en.md
+          - docs/3-cloudflare.cn.md
 
       - id: cloudflare-retry-after
         question:
@@ -146,8 +146,8 @@ data:
             If your code reads `X-RateLimit-Remaining` for quota pre-check, that header won't come from Cloudflare.
         confidence: 9
         reference:
-          - docs/2-cloudflare.en.md
-          - docs/2-cloudflare.cn.md
+          - docs/3-cloudflare.en.md
+          - docs/3-cloudflare.cn.md
 
   - name:
       en: cf-mitigated recovery
@@ -184,8 +184,8 @@ data:
             **`cf-mitigated: block` has no recovery path** — must change client identity (UA, IP) or pattern.
         confidence: 9
         reference:
-          - docs/2-cloudflare.en.md
-          - docs/2-cloudflare.cn.md
+          - docs/3-cloudflare.en.md
+          - docs/3-cloudflare.cn.md
 
       - id: cloudflare-403-no-cf-mitigated
         question:
@@ -216,7 +216,7 @@ data:
             - Check zone state (DNS correct, SSL cert valid)
         confidence: 7
         reference:
-          - docs/2-cloudflare.en.md
+          - docs/3-cloudflare.en.md
 
   - name:
       en: comparison
@@ -259,7 +259,7 @@ data:
             **HTTP serving isn't rate-limited** by either. Difference is in management API calls (cache invalidation, distribution creation). Cloudflare's API is friendlier; AWS's is stricter.
         confidence: 8
         reference:
-          - docs/2-cloudflare.en.md
+          - docs/3-cloudflare.en.md
 
   - name:
       en: not covered here (separate features)

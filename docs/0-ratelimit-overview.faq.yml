@@ -52,4 +52,4 @@ id: x-ratelimit-0-ratelimit-overview
             GB-hours / month Serverless quota, both apply.
         confidence: 9
         reference:
-          - docs/5-vercel.en.md
+          - docs/6-vercel.en.md

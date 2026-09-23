@@ -1,5 +1,5 @@
 ---
-name: 6-bandwagonhost
+name: 7-bandwagonhost
 description: BandwagonHost (VPS hosting) rate-limit equivalents — outbound port 25 (SMTP) blocked by default, monthly bandwidth caps (1 TB/mo entry-level), 1 Gbps shared port, soft concurrent TCP connection caps, no public API rate-limit table.
 type: reference
 ---
