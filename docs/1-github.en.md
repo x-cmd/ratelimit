@@ -1,6 +1,6 @@
 ---
-x-title: GitHub rate limits — quick reference (5 limits + 5 download surfaces)
-x-desc: Quick reference: GitHub's 5 rate limits (REST 5000/hr, GraphQL 5000 points/hr, Search 30/min, Actions 1000/hr, secondary heuristic) + 5 download surfaces (Releases API / HTML / archive / raw / CDN), where only the Releases API counts against the API quota.
+x-title: GitHub rate limits — quick reference (5 limits + 5 download methods)
+x-desc: Quick reference: GitHub's 5 rate limits (REST 5000/hr, GraphQL 5000 points/hr, Search 30/min, Actions 1000/hr, secondary heuristic) + 5 download methods (Releases API / HTML / archive / raw / CDN), where only the Releases API counts against the API quota.
 x-sidebar: GitHub rate limits + alt surfaces
 x-keywords: github, ratelimit, api quota, rest api, graphql, actions, secondary rate limit, x-ratelimit, oauth, github app, releases api, codeload, raw.githubusercontent.com, jsdelivr
 x-json-ld:
@@ -12,7 +12,7 @@ x-json-ld:
       about: 'GitHub API rate limits across REST, GraphQL, Search, Actions, and secondary'
 ---
 
-# GitHub rate limits — quick reference (5 limits + 5 download surfaces)
+# GitHub rate limits — quick reference (5 limits + 5 download methods)
 
 ---
 
@@ -65,9 +65,9 @@ x-json-ld:
 
 ---
 
-## 2. The 5 download surfaces (**only Releases API counts against the API quota**)
+## 2. The 5 download methods (**only Releases API counts against the API quota**)
 
-| Surface | URL | Counts vs API quota? | Best for |
+| Method | URL | Counts vs API quota? | Best for |
 | --- | --- | --- | --- |
 | **Releases API** | `api.github.com/...` | ✅ Yes (5000/hr auth) | List releases, find asset URLs |
 | **HTML scraping** | `github.com/.../releases/...` | ⚠️ Yes (undocumented UI limit, ~hundreds/hr/IP) | One-shot fallback when API exhausted |
