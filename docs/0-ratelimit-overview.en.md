@@ -48,13 +48,13 @@ fallback strategies).
 
 | Vendor | Surface | Status | Article |
 | --- | --- | --- | --- |
-| **GitHub** | REST + GraphQL + Actions + secondary + **5 download strategies (release / HTML / archive / raw / CDN)** | verified 2024-11 | [`1-github`](./1-github.md) |
-| Cloudflare | REST API + per-product HTTP caps | unverified | [`3-cloudflare`](./3-cloudflare.md) |
-| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`4-aliyun`](./4-aliyun.md) |
-| 腾讯云 (Tencent Cloud) | Cloud API 3.0 | unverified | [`5-tencent`](./5-tencent.md) |
-| Vercel | Function / Edge + REST API | unverified | [`6-vercel`](./6-vercel.md) |
-| BandwagonHost | VPS-level caps | unverified | [`7-bandwagonhost`](./7-bandwagonhost.md) |
-| Cross-vendor | HTTP rate-limit headers, backoff | n/a | [`2-rate-limit-headers-cheatsheet`](./2-rate-limit-headers-cheatsheet.md) |
+| **GitHub** | REST + GraphQL + Actions + secondary + **5 download strategies (release / HTML / archive / raw / CDN)** | verified 2024-11 | [`1-github`](./1-github.en.md) |
+| Cloudflare | REST API + per-product HTTP caps | unverified | [`3-cloudflare`](./3-cloudflare.en.md) |
+| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`4-aliyun`](./4-aliyun.en.md) |
+| 腾讯云 (Tencent Cloud) | Cloud API 3.0 | unverified | [`5-tencent`](./5-tencent.en.md) |
+| Vercel | Function / Edge + REST API | unverified | [`6-vercel`](./6-vercel.en.md) |
+| BandwagonHost | VPS-level caps | unverified | [`7-bandwagonhost`](./7-bandwagonhost.en.md) |
+| Cross-vendor | HTTP rate-limit headers, backoff | n/a | [`2-rate-limit-headers-cheatsheet`](./2-rate-limit-headers-cheatsheet.en.md) |
 
 ## How to consume
 
@@ -90,9 +90,9 @@ conventions, gotchas):
   `X-RateLimit-*` headers, `DescribeApiRateLimit`.
 - [`4-github`](./4-github.md) — REST + GraphQL + Actions
   + Search + secondary rate limits, header semantics.
-- [`6-vercel`](./6-vercel.md) — Function / Edge Function
+- [`6-vercel`](./6-vercel.en.md) — Function / Edge Function
   quotas, REST API 1 RPS default, RFC 9745 headers.
-- [`7-bandwagonhost`](./7-bandwagonhost.md) — VPS port 25
+- [`7-bandwagonhost`](./7-bandwagonhost.en.md) — VPS port 25
   block, bandwidth caps, connection limits.
 - [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.md) —
   HTTP-rate-limit header conventions across vendors, with
