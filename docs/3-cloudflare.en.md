@@ -147,13 +147,3 @@ Points:
 
 ---
 
-## Not covered here
-
-The following separate features (not rate limiting itself, but commonly confused) — see FAQ:
-
-- DDoS protection
-- Bot Management products (Bot Fight Mode / Super Bot Fight Mode / Enterprise Bot Management)
-- Your zone-level rate-limit rule config
-- WAF IP allow/block lists
-
-Each FAQ entry has a Cloudflare docs link + brief explanation.

@@ -176,13 +176,6 @@ def call_github(url, headers, max_retries=5):
 
 ---
 
-## 不在本文
-
-以下见 FAQ（每条都有详细参考链接）：
-
-- GitHub Apps 高级配额申请流程
-- GraphQL 字段级成本表
-- `x eget` 的完整实现
 
 ---
 

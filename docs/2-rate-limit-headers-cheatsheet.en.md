@@ -143,13 +143,6 @@ Regardless of service, when you see 429 / 403:
 
 ---
 
-## Not covered here
-
-See FAQ (each entry has detailed reference links):
-
-- Specific rate-limit numbers per service
-- How to handle 429 / cf-mitigated
-- IETF `RateLimit-*` draft details
 
 ---
 

@@ -177,13 +177,6 @@ Fixes:
 
 ---
 
-## Not covered here
-
-See FAQ (each entry has detailed reference links):
-
-- GitHub Apps higher-quota request flow
-- GraphQL field-level cost table
-- Full `x eget` implementation
 
 ---
 

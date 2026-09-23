@@ -143,13 +143,6 @@ RateLimit-Reset: 30
 
 ---
 
-## 不在本文
-
-以下见 FAQ（每条都有详细参考链接）：
-
-- 各服务的具体速率限制数字
-- 怎么应对 429 / cf-mitigated
-- IETF `RateLimit-*` 草案细节
 
 ---
 

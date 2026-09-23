@@ -147,13 +147,3 @@ def call_cloudflare(url, token, max_retries=5):
 
 ---
 
-## 不在本文
-
-以下独立功能（不是速率限制本身，但用户经常搞混）见 FAQ：
-
-- DDoS 防护
-- Bot Management 产品（Bot Fight Mode / Super Bot Fight Mode / Enterprise Bot Management）
-- 域名上自配的 rate limit 规则配置
-- WAF IP allow/block 列表
-
-每条 FAQ 都给了 Cloudflare 官方文档链接 + 简短说明。
