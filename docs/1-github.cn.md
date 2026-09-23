@@ -22,10 +22,10 @@ x-json-ld:
 | --- | --- | --- | --- | --- |
 | **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req | 1 小时 | 每把 token / 每装一仓 |
 | **Primary REST** | 无 | 60 req | 1 小时 | 源 IP |
+| **GITHUB_TOKEN**（GitHub Actions 默认）| `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 小时 | 每次 workflow 跑 / repo |
 | **GraphQL** | 任意 | 5000 点 | 1 小时 | 每把 token / 每装一仓（按查询成本算） |
 | **Search** | 任意 | 30 req | 1 分钟 | 用户 |
 | **Actions API** | 任意 | 1000 req | 1 小时 | 仓库 |
-| **GITHUB_TOKEN** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req | 1 小时 | 每次 workflow 跑 / repo |
 | **二级** | — | 启发式 | — | 滥用检测 |
 
 **配额按什么算**：
