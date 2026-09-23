@@ -29,7 +29,10 @@ x-json-ld:
 | **Actions API** | 任意 | 1000 req | 1 小时 | 仓库 |
 | **二级** | — | 启发式 | — | 滥用检测 |
 
-**单位 key**：PAT / OAuth / user-to-server 是 **per token**（多 token = 多倍预算）；GitHub App 是 **per installation**（多 installation = 多倍聚合）；Search / Actions / GraphQL / REST core **分桶**，`X-RateLimit-Resource` header 告诉你当前桶。
+**配额按什么算**：
+- PAT / OAuth（个人访问令牌）：按 token 算，一把 token 一个 5000/小时 的预算。
+- GitHub App：按 installation 算，一个仓一个预算。
+- REST、GraphQL、Search、Actions 是 4 个独立的桶（不互相挤占）。`X-RateLimit-Resource` header 告诉你当前在哪个桶。
 
 ### 二、5 种下载暴露面（**只有 Releases API 计入 API 配额**）
 
@@ -41,7 +44,7 @@ x-json-ld:
 | **Raw 内容** | `raw.githubusercontent.com/...` | ❌ 否（Fastly CDN） | 按路径单文件抓取 |
 | **CDN 镜像** | `cdn.jsdelivr.net/gh/...` / `cdn.statically.io/gh/...` / `gcore.jsdelivr.net/gh/...` | ❌ 否（CDN 级） | GitHub 慢 / 节流 / 不可达时的回退 |
 
-**核心策略**：1 个 API 调用列出 release + CDN 拉资产 = API 预算 1 次，下载无限。
+**核心策略**：用 API 列出 release（这是唯一扣配额的一步），下载走 CDN 或 raw。API 配额只扣 1 次，下载次数不限。
 
 ```sh
 # 第 1 步：列出 release（1 个 API 调用）
@@ -68,7 +71,7 @@ curl -L -o README.md \
 | `X-RateLimit-Resource` | 当前桶（`core` / `search` / `graphql` 等） | 每次响应 |
 | `Retry-After` | 整数秒 | 429 时 |
 
-**陷阱**：`X-RateLimit-Reset` 是 UNIX epoch（如 `1640000000`），不是相对值。`Retry-After` 才是相对秒数。新手常踩。
+**陷阱**：`X-RateLimit-Reset` 是 UNIX 时间戳（像 `1640000000`），不是"还剩几秒"。要看剩余时间自己 `reset - now`。`Retry-After` 才是直接的"等几秒"，429 上才有。
 
 ### 四、429 / 403 怎么响应
 
@@ -86,11 +89,11 @@ curl -L -o README.md \
 
 ### 一、Primary REST —— 5000/小时 token
 
-PAT / OAuth / GitHub App user-to-server 都用这个桶（GitHub App 算 installation）。配额的 key 是 **token 或 installation**，不是 GitHub 账号——3 个 PAT = 3 个独立预算。
+PAT / OAuth / GitHub App 的用户令牌都用这个桶（GitHub App 按 installation 算）。配额按 token 或 installation 算，不是按 GitHub 账号——3 个 PAT = 3 个独立预算。
 
 GitHub Apps 可[申请更高配额](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)，但典型工作流 5000/小时够用。
 
-### 二、GraphQL —— 5000 点/小时 cost-based
+### 二、GraphQL —— 5000 点/小时（按查询成本算）
 
 每个查询按**最高成本字段**扣 1-10 点：
 
@@ -112,7 +115,7 @@ query {
 
 ### 三、Search / Actions / Secondary
 
-**Search** —— 30/分钟，独立桶。昂贵因为索引 + 排序。REST 主配额**不**覆盖 `/search/*`——分桶。
+**Search** —— 30/分钟，独立桶。搜索比 REST 主限速贵得多（每次都要重做索引 + 排序）。REST 主配额**不**覆盖 `/search/*`——是分开的桶。
 
 **Actions API** —— 1000/小时/repo，`/repos/<o>/<r>/actions/*` 下所有端点共用。重度轮询 Actions 的 dashboard 集成会撞。
 
@@ -152,7 +155,7 @@ def call_github(url, headers, max_retries=5):
 
 1. **每次请求前查 `X-RateLimit-Remaining`**。0 就不发，睡到 reset。
 2. **遵守 `Retry-After`**。Primary 和 secondary 都设。
-3. **本地跟踪 per-token 预算**。`X-RateLimit-Remaining` 是权威的，但不要为查它发请求——本地存计数器，每次扣。
+3. **本地跟踪每个 token 的预算**。`X-RateLimit-Remaining` 是权威的，但不要为查它发请求——本地存计数器，每次扣。
 4. **避免突发**。并行 ≤ 5-10，否则 secondary 会触发。
 5. **用 conditional request**。`If-None-Match` / `If-Modified-Since` 让 GitHub 返 304，不耗配额。
 6. **尽量 CDN**。列 release 用 API（1 次），下载用 archive / raw / CDN（不耗）。
@@ -163,7 +166,7 @@ def call_github(url, headers, max_retries=5):
 
 - **GitHub Apps 高级配额申请流程** —— 见 [docs](https://docs.github.com/en/apps)。
 - **GraphQL 字段级成本表** —— 见 [GraphQL resource limits](https://docs.github.com/en/graphql/overview/resource-limitations)。
-- **`x eget` 实现的完整 mechanic** —— 见 FAQ `eget-comprehensive-considerations`。
+- **`x eget` 的完整实现** —— 见 FAQ `eget-comprehensive-considerations`。
 
 ---
 
