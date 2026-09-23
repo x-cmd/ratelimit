@@ -48,13 +48,13 @@ fallback strategies).
 
 | Vendor | Surface | Status | Article |
 | --- | --- | --- | --- |
-| Cloudflare | REST API + per-product HTTP caps | unverified | [`1-cloudflare`](./1-cloudflare.md) |
-| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`2-aliyun`](./2-aliyun.md) |
-| 腾讯云 (Tencent Cloud) | Cloud API 3.0 | unverified | [`3-tencent`](./3-tencent.md) |
-| GitHub | REST + GraphQL + Actions + secondary | verified 2024-11 | [`4-github`](./4-github.md) |
+| **GitHub** | REST + GraphQL + Actions + secondary + **5 download strategies (release / HTML / archive / raw / CDN)** | verified 2024-11 | [`1-github`](./1-github.md) |
+| Cloudflare | REST API + per-product HTTP caps | unverified | [`2-cloudflare`](./2-cloudflare.md) |
+| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`3-aliyun`](./3-aliyun.md) |
+| 腾讯云 (Tencent Cloud) | Cloud API 3.0 | unverified | [`4-tencent`](./4-tencent.md) |
 | Vercel | Function / Edge + REST API | unverified | [`5-vercel`](./5-vercel.md) |
 | BandwagonHost | VPS-level caps | unverified | [`6-bandwagonhost`](./6-bandwagonhost.md) |
-| Cross-vendor | HTTP rate-limit headers, backoff | n/a | [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.md) |
+| Cross-vendor | HTTP rate-limit headers, backoff | n/a | [`8-rate-limit-headers-cheatsheet`](./8-rate-limit-headers-cheatsheet.md) |
 
 ## How to consume
 

@@ -1,0 +1,138 @@
+id: x-ratelimit-1-github
+
+data:
+  - name:
+      en: github
+    qa:
+      - id: github-rest-quota-unauth-vs-auth
+        question:
+          en: What's the difference between authenticated and unauthenticated GitHub REST quotas?
+        answer:
+          en: |
+            Unauthenticated: 60 requests/hour per source IP. Authenticated
+            (PAT, OAuth, GitHub App user-to-server): 5000 requests/hour
+            per token / per installation. The ratio is roughly 80x
+            — always use authentication if you're hitting the
+            unauthenticated limit. Unauthenticated is for one-off
+            public data fetches; anything serious needs a token.
+        confidence: 10
+        reference:
+          - docs/1-github.en.md
+
+      - id: github-secondary-rate-limit
+        question:
+          en: What's GitHub's "secondary rate limit" and how is it different from the primary?
+        answer:
+          en: |
+            Primary: 5000 req/hr (or 60/hr unauth). Tracked explicitly;
+            visible via X-RateLimit-Remaining. Secondary: heuristic
+            abuse detection. No published threshold; triggers on
+            bursts (e.g., 100 requests in parallel even with
+            primary headroom), concurrent in-flight, repeated
+            identical-content requests. Response is the same 429
+            + Retry-After, but you can't tell which limit was
+            hit from the response alone. Avoid secondary by
+            spacing requests, using conditional requests
+            (If-None-Match), and not tight-polling.
+        confidence: 9
+        reference:
+          - docs/1-github.en.md
+
+      - id: github-graphql-points
+        question:
+          en: How does GraphQL cost-based rate limiting work?
+        answer:
+          en: |
+            5000 points per hour per token/installation. Each
+            query costs 1-10 points depending on its highest-cost
+            field. Connection fields and aggregation fields cost
+            more than simple field reads. Inspect actual cost with
+            `cost { totalCost }` in your query. Minimize cost by
+            requesting fewer connections per query (paginate
+            explicitly instead of relying on deep nesting).
+        confidence: 9
+        reference:
+          - docs/1-github.en.md
+
+      - id: github-reset-epoch-vs-seconds
+        question:
+          en: What's the format of X-RateLimit-Reset?
+        answer:
+          en: |
+            UNIX epoch timestamp in seconds, NOT seconds-until-
+            reset. To compute wait time: `wait = max(reset - now, 1)`.
+            This trips up many first-time consumers who assume
+            it's a relative value like "Retry-After".
+        confidence: 10
+        reference:
+          - docs/1-github.en.md
+
+      - id: github-five-download-surfaces
+        question:
+          en: What are the five ways to download from GitHub, and which counts against the API rate limit?
+        answer:
+          en: |
+            (1) Releases API at api.github.com — counts 5000/hr auth or 60/hr unauth.
+            (2) HTML scraping at github.com/.../releases — undocumented UI limit ~hundreds/hr per IP, DOM drift.
+            (3) Archive tarball at codeload.github.com or github.com/.../archive/... — Fastly CDN, no API quota.
+            (4) Raw content at raw.githubusercontent.com — Fastly CDN, no API quota, soft limit ~60-100 req/min per IP.
+            (5) CDN mirrors (cdn.jsdelivr.net/gh, cdn.statically.io/gh, gcore.jsdelivr.net/gh) — CDN-level rate limit, eventually consistent.
+            Strategy: only the Releases API counts. Let the API do listing, let raw.xxx / codeload / jsDelivr do the downloading.
+        confidence: 9
+        reference:
+          - docs/1-github.en.md
+
+      - id: github-raw-bypasses-ratelimit
+        question:
+          en: Why does raw.githubusercontent.com bypass the GitHub API rate limit?
+        answer:
+          en: |
+            GitHub's API rate limit applies to api.github.com and github.com HTML pages.
+            raw.githubusercontent.com is a separate Fastly CDN — the same CDN that serves cdn.jsdelivr.net and GitHub Releases downloads.
+            You are not consuming API budget when fetching raw content.
+            Soft limit: ~60-100 req/min per source IP (observed, not documented).
+        confidence: 9
+        reference:
+          - docs/1-github.en.md
+
+      - id: github-archive-vs-clone
+        question:
+          en: When should I use archive tarball vs git clone?
+        answer:
+          en: |
+            Archive tarball (codeload.github.com): one-shot fetch of a ref, no history, no submodules, no LFS, ≤100 MB cap.
+            git clone (with --filter=blob:none --sparse): full history, submodules, LFS — trim with .gitattributes.
+            For code-as-data (CI, training, analysis) over a known ref, the tarball is faster and avoids API quota.
+            For code-as-code (development, patches, history) over time, git clone is required.
+        confidence: 9
+        reference:
+          - docs/1-github.en.md
+
+      - id: gitattributes-trim
+        question:
+          en: How do I use gitattributes to trim a repo download?
+        answer:
+          en: |
+            Add a .gitattributes file in your repo root. For example:
+              install.d/*.tar.gz   filter=lfs diff=lfs merge=lfs -text
+              large-dataset/*     filter=lfs diff=lfs merge=lfs -text
+            Combined with sparse-checkout on the consumer side:
+              git clone --depth=1 --filter=blob:none --sparse https://github.com/<o>/<r>.git
+              git sparse-checkout set <path>
+            LFS pointers stay small; consumers fetch only what they need.
+        confidence: 8
+        reference:
+          - docs/1-github.en.md
+
+      - id: colab-no-release
+        question:
+          en: Can I avoid downloading GitHub releases entirely by using Google Colab?
+        answer:
+          en: |
+            Yes — cloud dev environments (Google Colab, GitHub Codespaces, Gitpod) stream the repo directly from GitHub without you pulling bytes.
+            For Colab: `!git clone https://github.com/x-cmd/x-cmd.git`.
+            For Codespaces: open the GitHub repo and click "Code → Codespaces".
+            Network traffic counts against GitHub's CDN, not your API quota.
+        confidence: 9
+        reference:
+          - docs/1-github.en.md
