@@ -5,100 +5,237 @@ data:
       en: rate limit basics
       cn: 速率限制基础
     qa:
-      - id: github-rest-quota-unauth-vs-auth
+      - id: github-api-rate-limit-numbers
         question:
-          en: What's the difference between authenticated and unauthenticated GitHub REST quotas?
+          cn: "GitHub API 速率限制是多少？"
+          en: "What are GitHub API rate limits?"
         answer:
+          cn: |
+            GitHub API 速率限制分认证情况：
+
+            - **未认证**：60 次/小时，按源 IP 算
+            - **PAT / OAuth / GitHub App**：5000 次/小时，按 token 或 installation 算
+            - **Search API**：30 次/分钟，独立桶
+            - **Actions API**：1000 次/小时/repo
+            - **GITHUB_TOKEN**（Actions 默认）：1000 次/小时/workflow run/repo
+
+            完整数字表见正文[一、5 种限速类型]。
           en: |
-            Unauthenticated: 60 requests/hour per source IP.
-            Authenticated (PAT, OAuth, GitHub App user-to-server):
-            5,000 requests/hour per token or per installation. The
-            ratio is roughly 80x — always use authentication if
-            you're hitting the unauthenticated limit. Unauthenticated
-            is for one-off public data fetches; anything serious
-            needs a token.
+            - **Unauthenticated**: 60 req/hr per source IP
+            - **PAT / OAuth / GitHub App**: 5000 req/hr per token or installation
+            - **Search API**: 30 req/min (separate bucket)
+            - **Actions API**: 1000 req/hr per repo
+            - **GITHUB_TOKEN** (Actions default): 1000 req/hr per workflow run per repo
+
+            See Section 1 for full table.
         confidence: 10
         reference:
           - docs/1-github.en.md
           - docs/1-github.cn.md
 
-      - id: github-graphql-points
+      - id: github-secondary-rate-limit
         question:
-          en: How does GraphQL cost-based rate limiting work?
+          cn: "GitHub 二级速率限制是什么？跟主限速有什么区别？"
+          en: "What is GitHub's secondary rate limit? How is it different from primary?"
         answer:
+          cn: |
+            **二级速率限制**是 GitHub 在主限速之外的另一层启发式保护：
+
+            - **触发条件**：短时间突发请求 / 并发在途请求太多 / 重复相同内容
+            - **响应**：跟主限速一样返回 429 + `Retry-After`，**单从响应分不出哪个触发的**
+            - **配额剩很多也会触发**——这是滥用检测，不是配额耗尽
+
+            怎么避免：避免突发（并行 ≤ 5-10）、用 conditional request (`If-None-Match`)、避免紧密轮询、选对下载方式（列 release 用 API，下载走 CDN）。
           en: |
-            5,000 points per hour per token or installation. Each
-            query costs 1-10 points depending on the highest-cost
-            field in the query. Connection fields and aggregation
-            fields cost more than simple field reads. Inspect the
-            actual cost by adding `cost { totalCost }` to the
-            query. Minimize cost by requesting fewer connections
-            per query — paginate explicitly instead of relying on
-            deep nesting.
+            **Secondary rate limit** is GitHub's heuristic abuse detection on top of the primary limit:
+
+            - **Triggers**: short bursts / too many concurrent in-flight / repeated identical content
+            - **Response**: same 429 + `Retry-After` as primary — **can't tell from response which fired**
+            - **Fires even with primary quota headroom** — this is abuse detection, not quota exhaustion
+
+            Avoid by: spacing requests (parallel ≤ 5-10), conditional requests (`If-None-Match` returns 304), avoiding tight polling, picking the right download surface.
         confidence: 9
         reference:
           - docs/1-github.en.md
+          - docs/1-github.cn.md
 
-      - id: github-reset-epoch-vs-seconds
+      - id: github-403-vs-429
         question:
-          en: What's the format of X-RateLimit-Reset?
+          cn: "GitHub 403 Forbidden 是什么意思？怎么解决？"
+          en: "GitHub 403 Forbidden — what does it mean and how to fix?"
         answer:
+          cn: |
+            GitHub 返回 **403 Forbidden** 通常意味着**主限速配额用完**：
+
+            - 响应里有 `X-RateLimit-Remaining: 0` 确认是配额问题
+            - 睡到 `X-RateLimit-Reset` 指定的时间（UNIX 时间戳）
+
+            也有 403 + `cf-mitigated` / `cf-mitigated` 等——但 GitHub 用 403 + `X-RateLimit-*` header 表示配额。
+
+            **怎么区分**：
+
+            - 403 + `X-RateLimit-Remaining: 0` → 配额到顶，等 reset
+            - 429 + `Retry-After` → 可能是二级限速或配额到顶
+            - 200/304 + conditional → 没触发限速
+
+            看 `X-RateLimit-Remaining` header 区分。
           en: |
-            UNIX epoch timestamp in seconds, NOT seconds-until-reset.
-            To compute wait time: `wait = max(reset - now, 1)`. This
-            trips up first-time consumers who assume it's a relative
-            value like `Retry-After`. The `Retry-After` header on 429
-            responses is relative seconds; `X-RateLimit-Reset` on 200 /
-            403 responses is absolute epoch.
+            **403 Forbidden** typically means **primary quota exhausted**:
+
+            - `X-RateLimit-Remaining: 0` in response confirms quota
+            - Sleep until `X-RateLimit-Reset` (UNIX epoch timestamp)
+
+            **How to disambiguate**:
+
+            - 403 + `X-RateLimit-Remaining: 0` → quota exhausted, wait for reset
+            - 429 + `Retry-After` → could be secondary or quota
+            - 200/304 with conditional → no limit triggered
+
+            Check `X-RateLimit-Remaining` header.
+        confidence: 9
+        reference:
+          - docs/1-github.en.md
+          - docs/1-github.cn.md
+
+      - id: github-x-ratelimit-reset-format
+        question:
+          cn: "GitHub X-RateLimit-Reset 是什么格式？怎么算剩余时间？"
+          en: "What's the format of X-RateLimit-Reset?"
+        answer:
+          cn: |
+            `X-RateLimit-Reset` 是 **UNIX 时间戳（秒）**，不是"还剩 N 秒"。
+
+            算剩余时间：`wait = max(reset - now, 1)`
+
+            注意区分两个 header：
+
+            - `X-RateLimit-Reset`：绝对时间戳（200 / 403 响应里有）
+            - `Retry-After`：相对秒数（429 响应里有）
+
+            新手常踩这个坑——以为 `X-RateLimit-Reset` 是相对值，结果 sleep 时间算错。
+          en: |
+            `X-RateLimit-Reset` is a **UNIX epoch timestamp (seconds)**, NOT seconds-until-reset.
+
+            To compute wait time: `wait = max(reset - now, 1)`
+
+            Distinguish from `Retry-After`:
+
+            - `X-RateLimit-Reset`: absolute epoch (on 200 / 403 responses)
+            - `Retry-After`: relative seconds (on 429 responses)
+
+            Common footgun — assuming `X-RateLimit-Reset` is relative.
         confidence: 10
         reference:
           - docs/1-github.en.md
+          - docs/1-github.cn.md
 
-      - id: github-secondary-rate-limit
+      - id: github-pat-rate-limit
         question:
-          en: What is the "secondary rate limit" and how is it different from the primary?
+          cn: "GitHub Personal Access Token (PAT) 速率限制是多少？"
+          en: "GitHub Personal Access Token (PAT) rate limit?"
         answer:
+          cn: |
+            PAT 属于认证用户，配额是 **5000 次/小时/token**。
+
+            **多个 PAT = 多倍预算**：3 把 PAT = 3 个独立 5000/h 桶（但互不影响）。
+
+            CI 场景标准做法：每个 workflow 一把 PAT，预算天然隔离。
+
+            **怎么生成 PAT**：GitHub 右上角头像 → Settings → Developer settings → Personal access tokens → Generate new token。
           en: |
-            Primary: 5,000 req/hr (or 60/hr unauth), tracked explicitly
-            via `X-RateLimit-Remaining`. Secondary: heuristic abuse
-            detection, no published threshold, triggered on:
-            (a) too many requests in a short burst regardless of
-            primary quota headroom, (b) many concurrent in-flight
-            requests, (c) repeated identical-content requests. The
-            response is the same 429 + `Retry-After` either way, so
-            you cannot tell from the response which limit fired.
-            Avoid secondary by spacing requests, using conditional
-            requests (`If-None-Match` / `If-Modified-Since` return
-            304 without consuming quota), and avoiding tight polling.
-        confidence: 9
+            PAT is authenticated, so quota is **5000 req/hr per token**.
+
+            **Multiple PATs = multiple budgets**: 3 PATs = 3 independent 5000/hr buckets (isolated from each other).
+
+            Standard CI pattern: one PAT per workflow for natural isolation.
+
+            **Generate PAT**: GitHub → Settings → Developer settings → Personal access tokens → Generate new token.
+        confidence: 10
         reference:
           - docs/1-github.en.md
+          - docs/1-github.cn.md
+
+      - id: github-search-api-limit
+        question:
+          cn: "GitHub Search API 速率限制是多少？"
+          en: "GitHub Search API rate limit?"
+        answer:
+          cn: |
+            **30 次/分钟**，独立桶（不计入 REST 主限速的 5000/h）。
+
+            比 REST 主限速低得多，因为搜索要现做索引 + 排序，开销大。
+
+            **REST 主限速配额不覆盖 Search API**——是分开算的两个桶。看 `X-RateLimit-Resource` header 知道当前扣的是哪个桶（值是 `core` / `search` / `graphql` 等）。
+          en: |
+            **30 req/min**, separate bucket (NOT counted against REST primary 5000/hr).
+
+            Much lower than REST primary because search redoes indexing + ranking on each call.
+
+            **REST primary quota does NOT cover Search** — separate buckets. Check `X-RateLimit-Resource` header (`core` / `search` / `graphql` / etc.).
+        confidence: 10
+        reference:
+          - docs/1-github.en.md
+          - docs/1-github.cn.md
+
+      - id: github-actions-rate-limit
+        question:
+          cn: "GitHub Actions API 速率限制？GITHUB_TOKEN 配额多少？"
+          en: "GitHub Actions API rate limit? GITHUB_TOKEN quota?"
+        answer:
+          cn: |
+            **Actions API**：1000 次/小时/repo，`/repos/<o>/<r>/actions/*` 下所有端点共用。
+
+            **`${{ secrets.GITHUB_TOKEN }}`**（workflow 默认 token）：也是 1000/h/repo，**同一个 repo 的所有 workflow run 共享这一个预算**。
+
+            **CI 撞墙陷阱**：N 个并发 workflow 跑同一个 repo，全部用 GITHUB_TOKEN——它们**共享 1000/h**。一个 workflow 写炸（大量轮询）会拖累其他 workflow。
+
+            **修法**：用 PAT 替代（per token 隔离预算），或用 GitHub App installation token（per installation 隔离）。
+          en: |
+            **Actions API**: 1000 req/hr per repo, all endpoints under `/repos/<o>/<r>/actions/*` share.
+
+            **`${{ secrets.GITHUB_TOKEN }}`** (workflow default): also 1000/hr/repo, **shared across all workflow runs in the repo**.
+
+            **CI pitfall**: N concurrent workflows in same repo all share GITHUB_TOKEN's **single 1000/hr/repo budget**. One runaway workflow takes out the rest.
+
+            **Fix**: use PAT (per-token isolation), or GitHub App installation token (per-installation isolation).
+        confidence: 10
+        reference:
+          - docs/1-github.en.md
+          - docs/1-github.cn.md
 
   - name:
-      en: alternative surfaces — escape hatches
-      cn: 替代暴露面 —— 绕开限流
+      en: download without API quota
+      cn: 下载不消耗 API 配额
     qa:
-      - id: github-five-download-surfaces
+      - id: github-download-without-api-quota
         question:
-          en: What are the five ways to download from GitHub, and which count against the API rate limit?
+          cn: "GitHub 怎么下载不消耗 API 配额？"
+          en: "How to download from GitHub without using API quota?"
         answer:
+          cn: |
+            GitHub 有 **5 种下载方式，只有 1 种消耗 API 配额**：
+
+            | 方式 | URL | 消耗配额？ |
+            |---|---|---|
+            | Releases API | `api.github.com/...` | ✅ 是 |
+            | HTML 抓取 | `github.com/.../releases/...` | ⚠️ 是（UI 限流） |
+            | Archive tarball | `codeload.github.com/...` | ❌ 否（Fastly CDN） |
+            | Raw 内容 | `raw.githubusercontent.com/...` | ❌ 否（Fastly CDN） |
+            | CDN 镜像 | `cdn.jsdelivr.net/gh/...` 等 | ❌ 否（CDN 级） |
+
+            **标准做法**：1 次 API 调用列出 release + CDN 拉资产 = API 配额 1 次，下载无限。
           en: |
-            (1) **Releases API** at `api.github.com` — counts
-            5,000/hr auth or 60/hr unauth.
-            (2) **HTML scraping** at `github.com/<o>/<r>/releases/...`
-            — undocumented UI limit ~hundreds/hr per IP, brittle
-            (DOM drift).
-            (3) **Archive tarball** at `codeload.github.com/.../tar.gz/refs/...`
-            or `github.com/<o>/<r>/archive/refs/.../tar.gz` — Fastly
-            CDN, NO documented GitHub API limit, but ≤100 MB cap.
-            (4) **Raw content** at `raw.githubusercontent.com/...` —
-            Fastly CDN, NO documented GitHub API limit, soft limit
-            ~60-100 req/min per IP.
-            (5) **CDN mirrors** at `cdn.jsdelivr.net/gh/...`,
-            `cdn.statically.io/gh/...`, `gcore.jsdelivr.net/gh/...`
-            — CDN-level rate limit, eventually consistent.
-            Strategy: only the Releases API counts. Let the API do
-            listing; let archive / raw / CDN do the downloading.
+            GitHub has **5 download methods, only 1 counts against API quota**:
+
+            | Method | URL | Counts? |
+            |---|---|---|
+            | Releases API | `api.github.com/...` | ✅ Yes |
+            | HTML scraping | `github.com/.../releases/...` | ⚠️ Yes (UI limit) |
+            | Archive tarball | `codeload.github.com/...` | ❌ No (Fastly CDN) |
+            | Raw content | `raw.githubusercontent.com/...` | ❌ No (Fastly CDN) |
+            | CDN mirrors | `cdn.jsdelivr.net/gh/...` etc | ❌ No (CDN-level) |
+
+            **Standard pattern**: 1 API call to list + CDN to download = 1 quota use, unlimited downloads.
         confidence: 9
         reference:
           - docs/1-github.en.md
@@ -106,98 +243,154 @@ data:
 
       - id: github-raw-bypasses-ratelimit
         question:
-          en: Why does raw.githubusercontent.com bypass the GitHub API rate limit?
+          cn: "raw.githubusercontent.com 会被 GitHub API 速率限制吗？"
+          en: "Does raw.githubusercontent.com count against GitHub API rate limit?"
         answer:
+          cn: |
+            **不会**。`raw.githubusercontent.com` 是 Fastly CDN 的一部分，跟 `api.github.com` 走的不是同一条路。
+
+            - 软限制：~60-100 次/分钟/源 IP（观察值，未文档化）
+            - **没有 per-token 配额**——token 对 raw 内容没用
+            - 也不走 5000/h 桶
+
+            如果你撞的是 raw 的 60/min 限制，多半是单 IP 并发太多。修法：用 jsDelivr CDN 镜像、加 IP 池。
           en: |
-            GitHub's API rate limit applies to `api.github.com` and
-            `github.com` HTML pages. `raw.githubusercontent.com` is a
-            separate Fastly CDN — the same CDN that serves
-            `cdn.jsdelivr.net` and GitHub Releases downloads. Your
-            requests do not pass through the API path; they are
-            served from the CDN cache directly. Soft limit: ~60-100
-            req/min per source IP (observed, not documented). There
-            is no per-token budget; tokens do not help with raw
-            content.
+            **No**. `raw.githubusercontent.com` is Fastly CDN, separate from `api.github.com`.
+
+            - Soft limit: ~60-100 req/min/source IP (observed, undocumented)
+            - **No per-token quota** — tokens don't help with raw content
+            - Not in the 5000/hr bucket
+
+            If you hit raw's ~60/min limit, it's likely single-IP concurrency. Fix: jsDelivr CDN mirror, IP pool.
         confidence: 9
         reference:
           - docs/1-github.en.md
+          - docs/1-github.cn.md
 
-      - id: jsdelivr-capabilities
+      - id: jsdelivr-github-capabilities
         question:
-          en: What can jsDelivr do beyond mirroring raw.githubusercontent.com?
+          cn: "jsDelivr 除了 raw 镜像还能做什么？支持 semver、npm 吗？"
+          en: "What can jsDelivr do beyond mirroring raw.githubusercontent.com? Semver? npm?"
         answer:
-          en: |
-            jsDelivr is a full multi-purpose CDN, not just a raw
-            mirror. Beyond `cdn.jsdelivr.net/gh/<owner>/<repo>@<ref>/<path>`:
+          cn: |
+            jsDelivr 是完整的多用途 CDN，**不只是 raw 镜像**：
 
-            - **Semver ranges** — `@1`, `@^1.2`, `~1.2.0` resolve to
-              the latest matching version automatically. Useful when
-              you want "the latest 1.x" without hardcoding.
-            - **Combine files** — `cdn.jsdelivr.net/combine/?files=a.js,b.js`
-              bundles multiple files in one response, reducing
-              HTTP roundtrips.
-            - **npm packages** — `cdn.jsdelivr.net/npm/<pkg>@<version>/<path>`
-              — also free, no GitHub link.
-            - **Multi-CDN fallback** — `gcore.jsdelivr.net` (Gcore
-              CDN) and `test-cdn.jsdelivr.net` (test CDN) when the
-              primary is slow or down.
-            - **Free tier** — ~50M requests/month per project, no
-              auth required.
-            - **Public repos only** — no private repo support.
-            - **~50 MB per file** — similar to GitHub's own limits.
-            - **Eventually consistent** — new release takes seconds
-              to minutes to propagate.
+            - **Semver 范围**：`@1`、`@^1.2`、`~1.2.0` 自动解析到匹配的最新版本
+            - **合并文件**：`cdn.jsdelivr.net/combine/?files=a.js,b.js` 一个响应里合并多个文件
+            - **npm 包**：`cdn.jsdelivr.net/npm/<pkg>@<version>/<path>` —— 免费，跟 GitHub 无关
+            - **多 CDN 备份**：`gcore.jsdelivr.net`（Gcore CDN）、`test-cdn.jsdelivr.net`（测试 CDN），主 CDN 慢或挂时切
+            - **免费额度**：~5000 万次/月/项目，无需认证
+            - **只支持公开仓库/包**：私有仓库不支持
+            - **~50 MB/文件**：跟 GitHub 自己的限制类似
+            - **最终一致**：新发布要几秒到几分钟传播
+          en: |
+            jsDelivr is a full multi-purpose CDN, **not just a raw mirror**:
+
+            - **Semver ranges**: `@1`, `@^1.2`, `~1.2.0` auto-resolve to latest matching version
+            - **Combine files**: `cdn.jsdelivr.net/combine/?files=a.js,b.js` — one response bundles many files
+            - **npm packages**: `cdn.jsdelivr.net/npm/<pkg>@<version>/<path>` — free, no GitHub dependency
+            - **Multi-CDN fallback**: `gcore.jsdelivr.net` (Gcore), `test-cdn.jsdelivr.net` (test) — when primary slow/down
+            - **Free tier**: ~50M requests/month/project, no auth
+            - **Public repos only**: no private repo support
+            - **~50 MB/file**: similar to GitHub's own limits
+            - **Eventually consistent**: new release takes seconds to minutes
         confidence: 9
         reference:
           - docs/1-github.en.md
+          - docs/1-github.cn.md
 
       - id: github-archive-vs-clone
         question:
-          en: When should I use the archive tarball vs git clone?
+          cn: "GitHub archive tarball vs git clone 怎么选？"
+          en: "GitHub archive tarball vs git clone — when to use which?"
         answer:
+          cn: |
+            **Archive tarball**（`codeload.github.com/.../tar.gz/refs/...`）：
+            - 一次性获取某个 ref
+            - 无历史、无 submodule、无 LFS
+            - ≤100 MB 上限
+            - 适用：已知 ref 的代码快照（CI 训练数据、静态分析、跑 release）
+
+            **git clone**（带 `--filter=blob:none --sparse`）：
+            - 完整历史、submodule、LFS、按路径 sparse checkout
+            - 适用：要随时间改代码（开发、打补丁、看历史）
+
+            **决策树**：
+
+            1. 已知 ref、无历史、≤100 MB → tarball
+            2. 要历史 / submodule / LFS → git clone
+            3. 仓库 >100 MB → git clone（sparse + filter）
+            4. 要开发 / 打补丁 → git clone（永远）
           en: |
             **Archive tarball** (`codeload.github.com/.../tar.gz/refs/...`):
-            one-shot fetch of a ref, no history, no submodules, no LFS,
-            ≤100 MB cap. For code-as-data over a known ref (CI
-            training data, static analysis), the tarball is faster
-            and avoids API quota.
+            - One-shot fetch of a ref
+            - No history, no submodules, no LFS
+            - ≤100 MB cap
+            - Use for: known-ref code snapshots (CI training data, static analysis, running releases)
 
             **git clone** (with `--filter=blob:none --sparse`):
-            full history, submodules, LFS, sparse checkout by path.
-            For code-as-code over time (development, patches, history),
-            git clone is required.
+            - Full history, submodules, LFS, sparse checkout by path
+            - Use for: code-as-code over time (development, patches, history)
 
-            Decision tree:
-            1. Need a specific ref, no history, ≤100 MB → tarball
-            2. Need history or submodules or LFS → git clone
+            **Decision tree**:
+
+            1. Known ref, no history, ≤100 MB → tarball
+            2. Need history / submodules / LFS → git clone
             3. Repo >100 MB → git clone (sparse + filter)
             4. Want to develop / patch → git clone (always)
         confidence: 9
         reference:
           - docs/1-github.en.md
+          - docs/1-github.cn.md
 
   - name:
-      en: developer workflows
-      cn: 开发者工作流
+      en: large repo handling
+      cn: 大仓库处理
     qa:
-      - id: gitattributes-trim
+      - id: github-repo-download-too-large
         question:
-          en: How do I use gitattributes to trim a repo download?
+          cn: "GitHub 仓库下载太大怎么减小？"
+          en: "How to make a GitHub repo download smaller?"
         answer:
+          cn: |
+            用 `.gitattributes` 在仓库根目录：
+
+            ```
+            # 把大文件标成 LFS（消费方只下载需要的）
+            install.d/*.tar.gz   filter=lfs diff=lfs merge=lfs -text
+            large-dataset/*      filter=lfs diff=lfs merge=lfs -text
+
+            # 或者从 archive 排除（tarball 本身更小）
+            heavy-data/          export-ignore
+            *.bak                export-ignore
+            ```
+
+            **消费方配合 sparse-checkout**：
+
+            ```sh
+            git clone --depth=1 --filter=blob:none --sparse \
+                 https://github.com/x-cmd/x-cmd.git
+            cd x-cmd
+            git sparse-checkout set install.d docs
+            ```
+
+            LFS 指针本身很小（几 KB），消费方按需拉数据。`export-ignore` 让 tarball 不包含被排除的路径。
+
+            完整讨论见 [FAQ: x eget 怎么处理 GitHub 下载问题]。
           en: |
-            Add a `.gitattributes` file in your repo root. Example:
+            Add `.gitattributes` in repo root:
 
             ```
             # Mark large files as LFS
             install.d/*.tar.gz   filter=lfs diff=lfs merge=lfs -text
             large-dataset/*      filter=lfs diff=lfs merge=lfs -text
 
-            # Or exclude from archive (consumers get a smaller tarball)
+            # Or exclude from archive
             heavy-data/          export-ignore
             *.bak                export-ignore
             ```
 
-            Combined with sparse-checkout on the consumer side:
+            **Combined with consumer-side sparse-checkout**:
 
             ```sh
             git clone --depth=1 --filter=blob:none --sparse \
@@ -206,241 +399,135 @@ data:
             git sparse-checkout set install.d docs
             ```
 
-            LFS pointers stay small; the consumer fetches only
-            what they need. `export-ignore` makes the tarball
-            itself smaller without changing git history.
+            LFS pointers stay small (a few KB); consumers fetch only what they need. `export-ignore` makes the tarball smaller.
         confidence: 8
         reference:
           - docs/1-github.en.md
 
-      - id: colab-no-release
+      - id: github-use-without-downloading
         question:
-          en: Can I avoid downloading GitHub releases entirely by using Google Colab or similar?
+          cn: "怎么不下到本地就能用 GitHub 仓库？"
+          en: "How to use GitHub repos without downloading locally?"
         answer:
+          cn: |
+            用云端开发环境——它们直接从 GitHub 流式读取，你**不下载字节**：
+
+            - **Google Colab** —— `!git clone https://github.com/x-cmd/x-cmd.git`（Python-first）
+            - **GitHub Codespaces** —— 浏览器里的 VS Code，点 Code → Codespaces
+            - **Gitpod** —— 开源替代，任意 GitHub 仓库都能用，免费额度可用
+            - **GitHub Actions runners** —— workflow YAML 里 clone
+
+            网络流量算 GitHub 的 CDN，**不算你的 API 配额**——不经过 `api.github.com`，所以不消耗 5000/h。
           en: |
-            Yes — cloud dev environments stream the repo directly
-            from GitHub without you pulling bytes.
+            Use cloud dev environments — they stream from GitHub directly, you don't pull bytes:
 
-            - **Google Colab** — `!git clone https://github.com/x-cmd/x-cmd.git`
-              (Python-first).
-            - **GitHub Codespaces** — open the GitHub repo and click
-              "Code → Codespaces". Browser-based VS Code.
-            - **Gitpod** — open-source alternative; works with any
-              GitHub repo; free tier available.
-            - **GitHub Actions runners** — clone inside the runner
-              (you write the workflow YAML).
+            - **Google Colab** — `!git clone https://github.com/x-cmd/x-cmd.git` (Python-first)
+            - **GitHub Codespaces** — browser-based VS Code, click Code → Codespaces
+            - **Gitpod** — open-source alternative, free tier available
+            - **GitHub Actions runners** — clone in workflow YAML
 
-            Network traffic counts against GitHub's CDN, not your
-            API quota. None of these count toward the 5,000/hr
-            REST primary limit because they don't hit `api.github.com`.
+            Network traffic counts against GitHub's CDN, **NOT** your API quota — doesn't go through `api.github.com`.
         confidence: 9
         reference:
           - docs/1-github.en.md
 
-      - id: eget-comprehensive-considerations
+      - id: x-eget-handles-github-download
         question:
-          en: How does `x eget` comprehensively handle the GitHub download problem? A reference example.
+          cn: "x eget 怎么处理 GitHub 下载问题？"
+          en: "How does x eget handle GitHub downloads?"
         answer:
+          cn: |
+            `x eget`（代码在 `x-cmd/x-cmd/mod/eget/lib/api`）是 GitHub 下载问题的参考实现——不是脚本，是一个**根据情况选对下载方式的决策树**：
+
+            1. **URL → forge 派发**：从 URL 检测是 github / gitlab / codeberg
+            2. **速率限制预检**：调 `https://api.github.com/rate_limit` 看配额够不够，不够直接跳过 API
+            3. **Releases API 列出**：配额够时调 `/repos/<o>/<r>/releases/expanded_assets/<tag>` —— **这是唯一消耗 API 配额的一步**
+            4. **HTML 抓取回退**：API 耗尽时抓 `github.com/<o>/<r>/releases/tag/<tag>`（DOM 易变但限流独立）
+            5. **CDN 下载**：拿到资产 URL 后用 Fastly CDN 拉，无 API 配额成本
+            6. **镜像回退**：curl `--speed-limit 50000 --speed-time 5` 检测卡顿，切到 ghproxy 镜像；API 元数据调用保持直连
+
+            **关键不变量**：**只有第 3 步扣 API 配额**。第 5/6 步走 CDN。
+
+            详细代码 + 注释见 `___x_cmd_eget_api_*` 函数。
           en: |
-            [`x eget`](https://github.com/x-cmd/x-cmd/tree/X/mod/eget)
-            is the reference implementation of the GitHub
-            download problem — not a script that does one
-            thing, but a decision tree that picks the right
-            surface for the right situation. The actual
-            logic lives in
-            [`x-cmd/x-cmd/mod/eget/lib/api`](https://github.com/x-cmd/x-cmd/tree/X/mod/eget/lib/api)
-            (the rest of the lib/ subdirs are parsing, cache,
-            manifest, verify, extract, etc.). The five
-            surfaces eget handles:
+            `x eget` (code at `x-cmd/x-cmd/mod/eget/lib/api`) is the reference implementation — not a script but a **decision tree that picks the right surface**:
 
-            1. **URL → forge dispatch.** Detect github /
-               gitlab / codeberg from the source URL
-               (functions like `___x_cmd_eget_api_github_token_`
-               and the case in `___x_cmd_eget_normalize_`).
-               Once classified, the right API base URL is
-               picked — `https://api.github.com` for github,
-               `https://gitlab.com/api/v4` for gitlab, etc.
+            1. **URL → forge dispatch** — detect github / gitlab / codeberg from URL
+            2. **Rate-limit pre-check** — call `https://api.github.com/rate_limit`; skip API if exhausted
+            3. **Releases API listing** — `/repos/<o>/<r>/releases/expanded_assets/<tag>` — **only step that counts against quota**
+            4. **HTML scraping fallback** — when API exhausted, scrape `github.com/<o>/<r>/releases/tag/<tag>` (DOM brittle but limit separate)
+            5. **CDN download** — Fastly CDN, no API cost
+            6. **Mirror fallback** — `curl --speed-limit 50000 --speed-time 5` detects stalls, flips to ghproxy mirror; API metadata stays direct
 
-            2. **Rate-limit pre-check.** Before listing,
-               eget hits `https://api.github.com/rate_limit`
-               (in `___x_cmd_eget_api___rate_limit_check_`) to
-               see if the primary quota is already exhausted.
-               If it is, eget skips the listing step entirely
-               and goes straight to the asset URL it has on
-               hand. This is the rate-limit-aware part of
-               the design.
+            **Key invariant**: **only step 3 counts**. Steps 5/6 are CDN-backed.
 
-            3. **Releases API listing.** When the primary
-               quota is healthy, eget calls
-               `https://api.github.com/repos/<o>/<r>/releases/expanded_assets/<tag>`
-               (or `/releases` for "list all"). One API call
-               per page. This is the **only** step that
-               counts against the 5,000/hr primary quota.
-
-            4. **HTML scraping fallback.** If the API is
-               exhausted (403 / 429 / network), eget falls
-               back to scraping
-               `github.com/<o>/<r>/releases/tag/<tag>`. The
-               scrape is brittle (DOM drift) but the rate
-               limit is separate from the API bucket. Used
-               only when the API call fails.
-
-            5. **CDN download.** Once the asset URL is
-               known (from API or HTML), eget downloads via
-               `github.com/<o>/<r>/releases/download/<tag>/<file>`
-               or `codeload.github.com/.../archive/.../tar.gz`.
-               This is Fastly CDN — NO API budget cost.
-               The actual curl call is in
-               `___x_cmd_eget_api___download_` (in `lib/api`):
-
-               ```sh
-               eval "___x_cmd_cmds curl -sS -L -f $ssl_opts \
-                   --speed-limit $speed_limit \
-                   --speed-time $speed_time \
-                   -o $_outfile_quoted $auth_opts $_fetch_url_quoted"
-               ```
-
-            6. **Mirror fallback with speed-based stall
-               detection.** For `https://github.com/*` URLs
-               specifically, eget can flip to a mirror
-               (ghproxy by default, or whatever
-               `___X_CMD_GHPROXY_ENDPOINT` is set to). The
-               mirror logic is in
-               `___x_cmd_eget_api___ghproxy_` (applied
-               before the download) and
-               `___x_cmd_eget_api___mirror_` (URL
-               construction). Crucially: **API metadata calls
-               stay direct** — the mirror is asset-only.
-
-               The speed-based detection is what makes this
-               robust:
-
-               ```sh
-               # Speed-based stall detection: if average speed
-               # drops below EGET_SPEED_LIMIT bytes/sec for
-               # EGET_SPEED_TIME seconds, curl aborts with exit
-               # 28. Caller catches this and retries via eget
-               # mirror. 5s window: a github.com direct link
-               # that can't sustain 50 KB/s for 5s is effectively
-               # stalled — switch to the mirror fast rather than
-               # making the user wait the old 30s.
-               local speed_limit="${EGET_SPEED_LIMIT:-50000}"
-               local speed_time="${EGET_SPEED_TIME:-5}"
-               ```
-
-               So if `curl --speed-limit 50000 --speed-time 5`
-               aborts, the caller retries via the mirror.
-               False positive just routes through the mirror
-               — which is the reliable path anyway.
-
-            Key invariant: **only step 3 (the Releases API
-            listing) counts against the 5,000/hr primary
-            quota**. Steps 5 and 6 are all CDN-backed.
-            Step 2 (rate-limit pre-check) is one API call —
-            cheap. Step 4 (HTML scraping) has its own
-            bucket (undocumented UI limit) that is separate
-            from the API quota.
-
-            The `--no-mirror` flag disables step 6 (mirror
-            fallback). Default is to enable it for users
-            with `--mirror=ghproxy` (or similar config).
-
-            This is what the article means by "let the API
-            do the listing, let `raw.xxx` and
-            `codeload.github.com` do the downloading" — in
-            code, that's the `___x_cmd_eget_api_*` dispatch
-            in
-            [`x-cmd/x-cmd/mod/eget/lib/api`](https://github.com/x-cmd/x-cmd/tree/X/mod/eget/lib/api).
+            See `___x_cmd_eget_api_*` functions for the actual code.
         confidence: 9
         reference:
           - docs/1-github.en.md
-
-  - name:
-      en: client-side handling
-      cn: 客户端处理
-    qa:
-      - id: how-to-avoid-secondary
-        question:
-          en: How do I avoid hitting GitHub's secondary rate limit?
-        answer:
-          en: |
-            Four rules of thumb:
-
-            1. **Avoid bursts.** Even with 4,000/hr primary headroom,
-               firing 100 requests in parallel can trigger secondary.
-               Space requests with a token bucket; cap parallelism
-               at ~5-10.
-            2. **Use conditional requests.** `If-None-Match` /
-               `If-Modified-Since` headers — GitHub returns 304
-               without consuming API quota for unchanged resources.
-            3. **Avoid tight polling.** Don't poll every second;
-               back off exponentially (1s → 2s → 4s → 8s ...).
-            4. **Pick the right surface.** Listing releases? Use
-               the API. Downloading? Use archive tarball. Single
-               file? Use raw content. Don't list via API and
-               download via API if you can download via raw.
-
-            429 response handling: respect `Retry-After` (secondary
-            sets it; primary does too on 429). If `X-RateLimit-Remaining == 0`,
-            sleep until `X-RateLimit-Reset` epoch.
-        confidence: 9
-        reference:
-          - docs/1-github.en.md
-
-      - id: which-surface-when
-        question:
-          en: When should I use which download surface?
-        answer:
-          en: |
-            Decision tree:
-
-            | Need | Surface | Why |
-            | --- | --- | --- |
-            | List all releases of a repo | Releases API | The API does this. |
-            | Download a single release asset (e.g. tarball) | `codeload.github.com` (archive) or `api.github.com/.../releases/assets` | Archive is CDN; asset API counts. |
-            | Fetch a known file at a known ref | `raw.githubusercontent.com` | CDN, no auth. |
-            | Fetch a known file with semver | jsDelivr `cdn.jsdelivr.net/gh/<o>/<r>@^1.2/<path>` | Auto-resolves. |
-            | Combine multiple files | jsDelivr `cdn.jsdelivr.net/combine/?files=...` | Single HTTP request. |
-            | Whole repo at a ref, no history | Archive tarball | One CDN request. |
-            | Whole repo with history / submodules / LFS | `git clone` | No CDN shortcut for these. |
-            | Run code without downloading | Codespaces / Gitpod / Colab | Streamed. |
-
-            General rule: **only the Releases API counts**.
-            Everything else is CDN-cached and exempt.
-        confidence: 9
-        reference:
-          - docs/1-github.en.md
+          - docs/1-github.cn.md
 
   - name:
       en: cheat sheets
       cn: 速查
     qa:
-      - id: cd-without-cd
+      - id: github-clone-minimal
         question:
-          en: Quick: how do I clone a repo without paying API quota or storing the full history?
+          cn: "GitHub 怎么 clone 仓库最小化下载？"
+          en: "How to clone a GitHub repo with minimal download?"
         answer:
-          en: |
+          cn: |
             ```sh
-            # Shallow, no blobs, sparse — minimal download
+            # 浅克隆 + 不要 blob + sparse
             git clone --depth=1 --filter=blob:none --sparse \
                  https://github.com/x-cmd/x-cmd.git
             cd x-cmd
             git sparse-checkout set install.d docs
             ```
 
-            `--depth=1` drops history. `--filter=blob:none` skips
-            blob fetch (you only get tree). `--sparse` lets you
-            checkout only specified paths. Combined: minimal
-            bandwidth, no API quota (this is git, not api.github.com),
-            no LFS download unless you explicitly fetch.
+            - `--depth=1`：不要历史
+            - `--filter=blob:none`：跳过 blob，只下 tree
+            - `--sparse`：只 checkout 指定路径
+
+            不消耗 API 配额（git 协议不走 `api.github.com`），不下载 LFS 除非显式拉。
+          en: |
+            ```sh
+            git clone --depth=1 --filter=blob:none --sparse \
+                 https://github.com/x-cmd/x-cmd.git
+            cd x-cmd
+            git sparse-checkout set install.d docs
+            ```
+
+            - `--depth=1`: drop history
+            - `--filter=blob:none`: skip blob fetch (only tree)
+            - `--sparse`: checkout only specified paths
+
+            No API quota (git protocol, not `api.github.com`), no LFS unless explicitly fetched.
         confidence: 9
         reference:
           - docs/1-github.en.md
 
-      - id: npm-via-jsdelivr
+      - id: npm-package-cdn-version
         question:
-          en: Quick: how do I get a specific file from a specific npm package version via CDN?
+          cn: "npm 包怎么从 CDN 拿特定版本？"
+          en: "How to get a specific npm package version via CDN?"
         answer:
+          cn: |
+            ```sh
+            # 特定版本
+            curl -L https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js
+
+            # 最新 4.x
+            curl -L https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js
+
+            # 最新
+            curl -L https://cdn.jsdelivr.net/npm/lodash/lodash.min.js
+
+            # 合并多个
+            curl -L 'https://cdn.jsdelivr.net/combine/npm/lodash@4.17.21/lodash.min.js,npm/jquery@3.7.1/dist/jquery.min.js'
+            ```
+
+            无需认证，无 npm / GitHub 速率限制，免费额度 ~5000 万次/月。只支持公开包。
           en: |
             ```sh
             # Specific version
@@ -452,12 +539,11 @@ data:
             # Latest
             curl -L https://cdn.jsdelivr.net/npm/lodash/lodash.min.js
 
-            # Bundle multiple files
+            # Combine multiple
             curl -L 'https://cdn.jsdelivr.net/combine/npm/lodash@4.17.21/lodash.min.js,npm/jquery@3.7.1/dist/jquery.min.js'
             ```
 
-            No auth, no rate limit from npm or GitHub, ~50M
-            requests/month on the free tier. Public packages only.
+            No auth, no npm/GitHub rate limit, ~50M requests/month free tier. Public packages only.
         confidence: 9
         reference:
           - docs/1-github.en.md

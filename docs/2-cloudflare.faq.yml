@@ -1,140 +1,262 @@
 id: x-ratelimit-2-cloudflare
 
-<data>:
+data:
   - name:
-      en: cloudflare
+      en: rate limit basics
+      cn: 速率限制基础
     qa:
-      - id: cloudflare-status-cf-mitigated-matrix
+      - id: cloudflare-api-rate-limit-numbers
         question:
-          en: How do I read a Cloudflare response — status code or cf-mitigated?
+          cn: "Cloudflare API 速率限制是多少？"
+          en: "What are Cloudflare API rate limits?"
         answer:
+          cn: |
+            Cloudflare REST API 默认配额：**1200 次 / 5 分钟 / API token**。
+
+            - **Free / Pro / Business**：都是 1200 次 / 5 分钟
+            - **Enterprise**：自定义配额（谈）
+
+            Workers / KV / R2 / D1 各自有独立的 HTTP 上限，**和 REST API 配额分开**——一个用完不影响另一个。
+
+            完整数字表见[二、REST API 配额]。
           en: |
-            **Both axes — not status code alone.**
+            Default: **1200 req / 5 min / API token**.
 
-            | Status | cf-mitigated | Meaning |
-            |---|---|---|
-            | 429 | (none) | REST API quota: 1200 req / 5 min / token |
-            | 429 | rate-limit | Zone-level rate-limit rule |
-            | 403 | challenge | WAF challenge (CAPTCHA / JS) |
-            | 403 | block | WAF direct block |
-            | 403 | bot | Bot Management triggered |
-            | 403 | ip | IP-based rule |
-            | 403 | country | Country-based rule |
-            | 200 | challenge | JS challenge page (HTML) |
+            - **Free / Pro / Business**: all 1200 req / 5 min
+            - **Enterprise**: custom (talk to sales)
 
-            The (status, cf-mitigated) pair tells you what kind of
-            response it is. Status alone is ambiguous: 429 can be
-            quota or rate-limit rule; 403 can be any of challenge /
-            block / bot / ip / country.
+            Per-product caps (Workers, KV, R2, D1) are **separate** from REST API quota.
         confidence: 10
         reference:
           - docs/2-cloudflare.en.md
+          - docs/2-cloudflare.cn.md
+
+      - id: cloudflare-429-vs-cf-mitigated
+        question:
+          cn: "Cloudflare 429 和 cf-mitigated 有什么区别？"
+          en: "Cloudflare 429 vs cf-mitigated — what's the difference?"
+        answer:
+          cn: |
+            **两个完全不同的信号**：
+
+            | 信号 | 性质 | 看哪里 |
+            |---|---|---|
+            | `HTTP 429` | 真·速率限制（配额到顶） | 响应状态码 + `Retry-After` |
+            | `cf-mitigated: challenge\|block` | **不是速率限制**——WAF 觉得你是机器人 | 任意状态码 + `cf-mitigated` header |
+
+            **修法也不同**：
+
+            - **429**：降速 + 退避（遵守 `Retry-After`）
+            - **cf-mitigated**：改节奏、User-Agent、可能要换 IP（**别自动重试**，WAF 在模式匹配）
+
+            把两者搞混修法越修越糟。判断标准：响应里有没有 `cf-mitigated` header——有就不是速率限制。
+          en: |
+            **Two different signals**:
+
+            | Signal | Meaning | Where to look |
+            |---|---|---|
+            | `HTTP 429` | True rate limit (quota reached) | Status code + `Retry-After` |
+            | `cf-mitigated: challenge\|block` | **NOT rate limit** — WAF thinks you're a bot | Any status + `cf-mitigated` header |
+
+            **Different fixes**:
+
+            - **429**: slow down + back off (honor `Retry-After`)
+            - **cf-mitigated**: change cadence / User-Agent / IP (**don't auto-retry**, WAF is pattern-matching)
+
+            Disambiguation: if the response has `cf-mitigated` header, it's NOT a rate limit.
+        confidence: 10
+        reference:
+          - docs/2-cloudflare.en.md
+          - docs/2-cloudflare.cn.md
 
       - id: cloudflare-rest-quota-free-vs-pro
         question:
-          en: Is Cloudflare's REST API quota different between Free and Pro?
+          cn: "Cloudflare Free 和 Pro 的 API 配额一样吗？"
+          en: "Is Cloudflare Free and Pro API quota different?"
         answer:
+          cn: |
+            **一样**：都是 1200 次 / 5 分钟 / API token。
+
+            套餐差异在**消费侧**：
+            - HTTP 请求 / zone / 天（Free 100K vs Pro 10M / 月）
+            - Workers 请求配额
+            - KV / R2 / D1 容量
+
+            **API 操作侧配额无差异**——Free / Pro / Business 都是 1200/5min。
           en: |
-            No — both Free and Pro get 1200 requests / 5 min / API
-            token. The differentiation between plans is on the
-            consumer side (HTTP request caps per zone, Workers
-            quota, KV/R2/D1 limits), not on the operator-side API
-            quota. Enterprise plans have custom quotas negotiated
-            separately.
+            **Same**: 1200 req / 5 min / API token.
+
+            Plan differences are on the **consumer side**:
+            - HTTP requests / zone / day (Free 100K vs Pro 10M / mo)
+            - Workers request quota
+            - KV / R2 / D1 capacity
+
+            **No difference on the operator-side API quota**.
         confidence: 10
         reference:
           - docs/2-cloudflare.en.md
+          - docs/2-cloudflare.cn.md
 
-      - id: cloudflare-per-token-quota-mechanic
+      - id: cloudflare-per-token-quota
         question:
-          en: What does "per user" mean in Cloudflare's 1200 req / 5 min limit?
+          cn: "Cloudflare 速率限制的'每用户'是什么意思？"
+          en: "What does Cloudflare 'per user' rate limit mean?"
         answer:
-          en: |
-            **Per API token, not per Cloudflare account.**
+          cn: |
+            "每用户" 实际是 **每 API token**，不是 Cloudflare 账号。
 
-            - One API token = one independent 1200 req / 5 min quota
-            - Two API tokens = two independent quotas
-            - CI teams give each job its own token so a runaway job
-              doesn't take out the fleet
-            - Legacy Global API Key (pre-2024) is single-shared —
-              all scripts using it share one quota; that's why
-              legacy CI keeps hitting 429
+            - **一把 token = 一个独立 1200/5min 配额**
+            - 两把 token = 两个独立配额
+            - CI 场景给每个 job 一把 token，一个写炸不会拖全队
+
+            旧式 **Global API Key**（一把共享）已被 API token 体系替代。如果你的 CI 老撞 429，多半还在用 Global API Key，所有脚本共享一个配额。
+          en: |
+            "Per user" really means **per API token**, not per Cloudflare account.
+
+            - **One token = one independent 1200/5min quota**
+            - Two tokens = two independent quotas
+            - CI pattern: one token per job for isolation
+
+            Legacy **Global API Key** is one shared key for the whole account — replaced by API tokens. If your CI keeps hitting 429, you might still be on Global API Key.
         confidence: 10
         reference:
           - docs/2-cloudflare.en.md
+          - docs/2-cloudflare.cn.md
 
-      - id: cloudflare-retry-after-format
+      - id: cloudflare-retry-after
         question:
-          en: What's the format of Cloudflare's Retry-After header?
+          cn: "Cloudflare Retry-After header 格式？怎么读？"
+          en: "Cloudflare Retry-After header format?"
         answer:
+          cn: |
+            整数秒（如 `Retry-After: 60`）。在 429 响应里有。
+
+            **Cloudflare 不像 GitHub**，**不发** `X-RateLimit-*` / `X-RateLimit-Reset` 家族 header。
+
+            唯一可靠的限速信号是 **429 + `Retry-After`**。盯状态码，不盯头。
+
+            如果你的代码靠读 `X-RateLimit-Remaining` 来预检配额，在 Cloudflare 上没用——这个 header 不会来。
           en: |
-            Integer seconds (e.g., `Retry-After: 60`). Cloudflare
-            does NOT emit `X-RateLimit-*` / `X-RateLimit-Reset`
-            like GitHub does. Watch the response status (429) +
-            Retry-After; those are the only reliable signals.
+            Integer seconds (e.g., `Retry-After: 60`). Present on 429 responses.
+
+            **Cloudflare does NOT emit `X-RateLimit-*` / `X-RateLimit-Reset`** like GitHub.
+
+            Only reliable signal: **429 + `Retry-After`**. Watch status, not headers.
+
+            If your code reads `X-RateLimit-Remaining` for quota pre-check, that header won't come from Cloudflare.
         confidence: 9
         reference:
           - docs/2-cloudflare.en.md
+          - docs/2-cloudflare.cn.md
 
+  - name:
+      en: cf-mitigated recovery
+      cn: cf-mitigated 恢复
+    qa:
       - id: cloudflare-cf-mitigated-recovery
         question:
-          en: How do I recover from a Cloudflare cf-mitigated block?
+          cn: "cf-mitigated 被 Cloudflare 挡住怎么恢复？"
+          en: "How to recover from Cloudflare cf-mitigated block?"
         answer:
+          cn: |
+            **别自动重试**。cf-mitigated 是 Cloudflare WAF / Bot Management 在**模式匹配**——同模式重试只会一直被挡。
+
+            **恢复步骤**（按优先级）：
+
+            1. **降速 + 加抖动** —— 完美 1 秒间隔会触发检测，加人类式 jitter（随机 0.5-2 秒间隔）
+            2. **换 User-Agent** —— `python-requests/2.31.0`、`curl/8.4.0` 是裸露信号；真浏览器发 `Mozilla/5.0 ...`
+            3. **换 IP** —— 数据中心 IP、Tor 出口、劣史住宅代理信誉差
+            4. **解 challenge** —— `cf-mitigated: challenge`（不是 `block`）可以解 CAPTCHA / JS challenge
+            5. **换网络** —— 同 IP 可能一直 flag
+
+            **`cf-mitigated: block` 没有恢复路径**——必须改客户端身份（UA、IP）或模式。
           en: |
-            **Don't auto-retry.** cf-mitigated is pattern-matching
-            by Cloudflare's WAF / Bot Management; retrying with the
-            same client pattern keeps getting blocked.
+            **Don't auto-retry**. cf-mitigated is Cloudflare's WAF / Bot Management **pattern-matching** — same pattern = same block.
 
-            Recovery steps:
+            **Recovery steps** (in priority order):
 
-            1. **Slow cadence** — add human-like jitter to request
-               timing.
-            2. **Change User-Agent** — `python-requests/2.31.0` and
-               `curl/8.4.0` are naked signals; real browsers send
-               `Mozilla/5.0 ...`.
-            3. **Rotate IP** — datacenter IPs and Tor exits have
-               bad reputation.
-            4. **Solve the challenge** — for `cf-mitigated:
-               challenge` (not `block`), you may complete a CAPTCHA
-               or JS challenge.
-            5. **Different network** — same IP may keep getting
-               flagged; switch networks.
+            1. **Slow down + add jitter** — perfect 1-second intervals trigger detection; add human-like jitter (random 0.5-2s)
+            2. **Change User-Agent** — `python-requests/2.31.0`, `curl/8.4.0` are naked signals; real browsers send `Mozilla/5.0 ...`
+            3. **Rotate IP** — datacenter IPs, Tor exits, residential proxies with bad history
+            4. **Solve challenge** — for `cf-mitigated: challenge` (not `block`), complete CAPTCHA / JS challenge
+            5. **Switch network** — same IP may keep getting flagged
 
-            For `cf-mitigated: block`, there is no recovery path
-            from within the response — you must change client
-            identity (UA, IP) or pattern.
+            **`cf-mitigated: block` has no recovery path** — must change client identity (UA, IP) or pattern.
         confidence: 9
         reference:
           - docs/2-cloudflare.en.md
+          - docs/2-cloudflare.cn.md
 
+      - id: cloudflare-403-no-cf-mitigated
+        question:
+          cn: "Cloudflare 返回 403 但没有 cf-mitigated header 是什么意思？"
+          en: "Cloudflare 403 with no cf-mitigated header — what does it mean?"
+        answer:
+          cn: |
+            几种可能：
+
+            1. **域名层 rate limit 规则触发** —— 你域名上设的规则，状态码 403 / 429 + `Retry-After`，不带 `cf-mitigated`
+            2. **WAF 自定义规则触发** —— 你域名上的 WAF 规则（IP allow/block、自定义规则）
+            3. **Cloudflare 账号/zone 状态问题** —— zone 被暂停、配置错误等
+
+            排查步骤：
+            - 看 `cf-ray` header，给 CF 客服查
+            - Cloudflare dashboard → Security → Events 看触发的是哪条规则
+            - 检查 zone 状态（DNS 是否正确、SSL 证书是否有效）
+          en: |
+            Several possibilities:
+
+            1. **Zone-level rate-limit rule triggered** — your domain's rule; 403 / 429 + `Retry-After`, no `cf-mitigated`
+            2. **WAF custom rule triggered** — your domain's WAF rules (IP allow/block, custom rules)
+            3. **Cloudflare account/zone state issue** — zone suspended, config error, etc.
+
+            Debug steps:
+            - Get `cf-ray` header, give to CF support
+            - Check Cloudflare dashboard → Security → Events for which rule fired
+            - Check zone state (DNS correct, SSL cert valid)
+        confidence: 7
+        reference:
+          - docs/2-cloudflare.en.md
+
+  - name:
+      en: comparison
+      cn: 对比
+    qa:
       - id: cloudflare-vs-aws-cloudfront
         question:
-          en: Cloudflare or AWS CloudFront for edge / CDN?
+          cn: "Cloudflare 还是 AWS CloudFront？"
+          en: "Cloudflare or AWS CloudFront?"
         answer:
+          cn: |
+            不同优化目标。
+
+            **Cloudflare 强在开发者体验和全球覆盖**：
+            - 一键配置、免费套餐、200+ 城市 anycast
+            - DDoS 防护内置免费
+            - Workers 边缘计算、R2 S3 兼容存储、KV 低延迟键值
+            - 适合：全新项目、多云、边缘优先架构
+
+            **AWS CloudFront 强在 AWS 栈集成**：
+            - 已经在用 AWS（S3、Lambda、IAM、ACM）的话原生集成
+            - S3 签名 URL、Lambda@Edge 改写请求、AWS Shield Advanced 高阶 DDoS
+            - 适合：AWS 中心栈
+
+            **正常 HTTP 服务不限速**——两家都不按请求限流；差异在调 CloudFront 的管理 API 时（缓存失效、创建 distribution）。Cloudflare 的 API 更友好；AWS 的管理 API 限流更严。
           en: |
             Different optimization targets.
 
-            **Cloudflare wins on developer experience and global
-            reach.** One-click setup, free tier, 200+ city anycast
-            network. Strengths: DDoS protection (built-in, no extra
-            cost), Workers for edge compute, R2 for S3-compatible
-            storage, KV for low-latency key-value. Best for:
-            greenfield projects, multi-cloud, edge-first
-            architectures.
+            **Cloudflare wins on DX + global reach**:
+            - One-click setup, free tier, 200+ city anycast
+            - Built-in free DDoS
+            - Workers edge compute, R2 S3-compatible storage, KV low-latency
+            - Best for: greenfield, multi-cloud, edge-first
 
-            **AWS CloudFront wins on AWS-stack integration.** If
-            you're already on AWS (S3, Lambda, IAM, ACM certs),
-            CloudFront ties in natively: signed URLs from S3,
-            Lambda@Edge for request transforms, AWS Shield Advanced
-            for higher-tier DDoS. Best for: AWS-centric stacks
-            where every other piece of infra is already in AWS.
+            **AWS CloudFront wins on AWS integration**:
+            - Native if already on AWS (S3, Lambda, IAM, ACM)
+            - S3 signed URLs, Lambda@Edge, AWS Shield Advanced
+            - Best for: AWS-centric stacks
 
-            **Rate-limit comparison is irrelevant for serving
-            traffic** (both are unmetered for normal HTTP serving);
-            the difference matters when you call CloudFront's API
-            to invalidate caches or create distributions.
-            Cloudflare's API is friendlier; AWS has stricter
-            throttling on management-API calls.
+            **HTTP serving isn't rate-limited** by either. Difference is in management API calls (cache invalidation, distribution creation). Cloudflare's API is friendlier; AWS's is stricter.
         confidence: 8
         reference:
           - docs/2-cloudflare.en.md
