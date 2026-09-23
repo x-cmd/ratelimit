@@ -1,4 +1,4 @@
-id: x-ratelimit-1-cloudflare
+id: x-ratelimit-2-cloudflare
 
 <data>:
   - name:
@@ -17,7 +17,7 @@ id: x-ratelimit-1-cloudflare
             negotiated separately.
         confidence: 10
         reference:
-          - docs/1-cloudflare.en.md
+          - docs/2-cloudflare.en.md
 
       - id: cloudflare-cf-mitigated-vs-429
         question:
@@ -34,7 +34,7 @@ id: x-ratelimit-1-cloudflare
             = back off significantly or rotate identity.
         confidence: 9
         reference:
-          - docs/1-cloudflare.en.md
+          - docs/2-cloudflare.en.md
 
       - id: cloudflare-retry-after-format
         question:
@@ -48,7 +48,7 @@ id: x-ratelimit-1-cloudflare
             the headers, as the primary signal.
         confidence: 8
         reference:
-          - docs/1-cloudflare.en.md
+          - docs/2-cloudflare.en.md
 
       - id: cloudflare-vs-aws-cloudfront
         question:
@@ -81,7 +81,7 @@ id: x-ratelimit-1-cloudflare
             has stricter throttling on management-API calls.
         confidence: 8
         reference:
-          - docs/1-cloudflare.en.md
+          - docs/2-cloudflare.en.md
 
       - id: cloudflare-vs-aliyun-cdn
         question:
@@ -109,7 +109,7 @@ id: x-ratelimit-1-cloudflare
             This is common for cross-border products.
         confidence: 8
         reference:
-          - docs/1-cloudflare.en.md
+          - docs/2-cloudflare.en.md
           - docs/2-aliyun.en.md
 
       - id: cloudflare-vs-vercel
@@ -152,6 +152,6 @@ id: x-ratelimit-1-cloudflare
             real constraint, not Cloudflare's traffic serving.
         confidence: 9
         reference:
-          - docs/1-cloudflare.en.md
+          - docs/2-cloudflare.en.md
           - docs/5-vercel.en.md
 
