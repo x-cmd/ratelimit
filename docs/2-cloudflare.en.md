@@ -1,18 +1,18 @@
 ---
-x-title: Cloudflare 速率限制 —— REST API 与各产品配额
-x-desc: Cloudflare 的速率限制故事有两条独立的线（REST API 配额、各产品 HTTP 上限），再加一件看起来像速率限制但其实不是的事 —— `cf-mitigated` 滥用检测。修法完全不同：429 降速即可；cf-mitigated 要换 UA / IP / 节奏。
-x-sidebar: Cloudflare 速率限制
-x-keywords: cloudflare, ratelimit, qps, api 配额, workers, 免费层, cf-mitigated, 滥用检测, 429, retry-after
+x-title: Cloudflare rate limits — REST API and per-product caps
+x-desc: Cloudflare's per-user REST API rate limit, free-tier product caps (HTTP requests, Workers), the difference between API rate limits and the cf-mitigated challenge header, and how to implement a robust client retry strategy.
+x-sidebar: Cloudflare rate limits
+x-keywords: cloudflare, ratelimit, qps, api quota, workers, free tier, cf-mitigated, retry-after, 429
 x-json-ld:
   '@context': https://schema.org
   '@graph':
     - '@type': TechArticle
-      headline: 'Cloudflare 429 vs cf-mitigated — 它们不是一回事'
+      headline: 'Cloudflare rate limits'
       inLanguage: 'en'
-      about: 'Cloudflare rate limits (429) and abuse detection (cf-mitigated), and why they are different'
+      about: 'Cloudflare API and per-product rate limits'
 ---
 
-# Cloudflare 出错时怎么回事 — 429 速率限制 与 cf-mitigated 滥用检测 不是一回事
+# Cloudflare rate limits — REST API and per-product caps
 
 Cloudflare 有 **两个长得像但意思完全不同的"出错了"信号**。它们容易被
 混淆 —— 而把一个搞错了修法只会让另一个更糟。
