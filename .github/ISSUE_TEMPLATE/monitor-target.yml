@@ -1,0 +1,63 @@
+name: ratelimit 监控对象
+description: 申请新增一个 ratelimit 监控目标厂商 / API / 表面
+title: "[monitor-target] "
+labels: ["monitor-target"]
+type: monitor-target
+body:
+  - id: ai_prompt
+    type: markdown
+    attributes:
+      value: |
+        ## AI 创建提示
+
+        如果你是 AI agent（Claude / GPT / 其他），请在创建 issue 前确认：
+
+        - **type: monitor-target** —— 这是新增监控对象的需求，不是修错（修错请用 `errata`）
+        - **目标具体可写** —— `vendor`、`api surface`、`已知文档链接`，三个至少给两个
+        - **数据来源是官方** —— 厂商官方文档或 API 页面，不要用第三方博客
+        - **不要自动 PR** —— 等 maintainer 回复确认需求再动 YAML
+  - id: vendor
+    attributes:
+      label: 厂商 / 产品
+      description: 例：Cloudflare R2 / Vercel KV / 阿里云 SLS
+      placeholder: "Cloudflare R2"
+    validations:
+      required: true
+  - id: api_surface
+    attributes:
+      label: API 表面
+      description: 例：Object 上传 / 函数调用 / Search 查询
+      placeholder: "R2 Object PUT 上传"
+    validations:
+      required: true
+  - id: docs_source
+    attributes:
+      label: 官方文档链接
+      description: 厂商官方页面，URL 必填
+      placeholder: "https://developers.cloudflare.com/r2/api/s3/api/"
+    validations:
+      required: true
+  - id: known_limits
+    attributes:
+      label: 已知的速率 / 配额数字
+      description: 列出来源文档里的数字。"" 表示还没有，去查文档
+      placeholder: |
+        - 1000 PUT/sec/account
+        - 5000 GET/sec/account
+        - 单对象 5 GB
+    validations:
+      required: false
+  - id: use_case
+    attributes:
+      label: 为什么我们需要这个
+      description: 用一两句话说你的场景，让 maintainer 评估优先级
+      placeholder: "我们 CI 上传 R2 备份想监控剩余配额"
+    validations:
+      required: true
+  - id: willing_to_pr
+    attributes:
+      label: 愿意 PR 吗？
+      description: "愿意：填 yes。愿意但希望 maintainer 先 review：填 review-first。不想：填 no。"
+      placeholder: "review-first"
+    validations:
+      required: true

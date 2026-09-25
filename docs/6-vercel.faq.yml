@@ -1,13 +1,26 @@
 id: x-ratelimit-6-vercel
 
-<data>:
+data:
   - name:
       en: vercel
+      cn: vercel
     qa:
       - id: vercel-gb-hours-formula
         question:
           en: How is the Vercel GB-hours quota calculated?
+          cn: Vercel GB-hours 配额怎么算？
         answer:
+          cn: |
+            **GB-hours = (内存 GB) × (执行时间 小时) × (调用次数)**。
+
+            例子：256 MB 函数、每月 10 万次调用、平均每次 2 秒：
+
+            `0.256 × (2/3600) × 100000 ≈ 14.2 GB-hours`
+
+            - **Hobby** 100 GB-hours/月
+            - **Pro** 1000 GB-hours/月
+
+            内存低 → 单次成本低，但内存密集路径 OOM 风险高。
           en: |
             GB-hours = (memory in GB) × (execution time in hours) ×
             (number of invocations). Example: 256 MB function,
@@ -19,11 +32,23 @@ id: x-ratelimit-6-vercel
         confidence: 9
         reference:
           - docs/6-vercel.en.md
+          - docs/6-vercel.cn.md
 
       - id: vercel-402-vs-500
         question:
           en: How do I distinguish a Vercel plan-cap from a code error?
+          cn: 怎么区分 Vercel 的套餐上限和代码错误？
         answer:
+          cn: |
+            - **HTTP 402** —— 套餐上限到顶（Hobby 100 GB-hours/月 或 Pro 1000 GB-hours/月）
+            - **HTTP 500** —— 函数代码错误
+            - **HTTP 504** —— 函数超时
+
+            三种要走的告警路径不同：
+
+            - **402** —— 通知账单 / 增长团队（容量问题）
+            - **500** —— 通知 on-call（代码 bug）
+            - **504** —— 通知 on-call，但说明是**性能问题**而不是正确性
           en: |
             HTTP 402 = plan-cap exceeded (Hobby's 100 GB-hr/mo or
             Pro's 1000 GB-hr/mo). HTTP 500 = code error in your
@@ -35,11 +60,23 @@ id: x-ratelimit-6-vercel
         confidence: 9
         reference:
           - docs/6-vercel.en.md
+          - docs/6-vercel.cn.md
 
       - id: vercel-edge-vs-serverless
         question:
           en: When should I use Edge Functions vs Serverless Functions?
+          cn: 什么时候用 Edge Functions，什么时候用 Serverless Functions？
         answer:
+          cn: |
+            **Edge Functions**：V8 隔离、单次调用成本低、代码硬上限 1 MB、冷启动快。
+
+            适用：**请求时的中间件**——鉴权检查、A/B 测试分流、路由决策、基于地理位置的重定向。
+
+            **Serverless Functions**：完整的 Node.js / Python / Go 运行时，单次调用成本高，上限更高。
+
+            适用：**算力重的路径**——图像处理、PDF 生成、任何 CPU 密集或依赖库重的活儿。
+
+            两类函数在**同一个套餐下配额分开算**。
           en: |
             Edge Functions: V8 isolates, low per-invocation cost,
             hard 1MB code size, fast cold start. Use for
@@ -54,11 +91,32 @@ id: x-ratelimit-6-vercel
         confidence: 8
         reference:
           - docs/6-vercel.en.md
+          - docs/6-vercel.cn.md
 
       - id: vercel-vs-cloudflare-pages
         question:
           en: Vercel or Cloudflare Pages for frontend hosting?
+          cn: 前端托管，选 Vercel 还是 Cloudflare Pages？
         answer:
+          cn: |
+            两家都是静态 / JAMstack 前端的优秀选项；选哪个取决于**框架适配**和**总成本**。
+
+            **Vercel 在 Next.js DX 上赢**——Next.js 团队就是 Vercel 团队，git push 部署、预览分支自动、内置图像优化。
+
+            适合：Next.js / Astro / SvelteKit 项目，框架集成重要的场景。
+
+            **Cloudflare Pages 在成本和整合上赢**——免费套餐含无限静态站点；同一个 Cloudflare 账号给你 Workers（边缘计算）、KV（键值）、R2（S3 兼容存储）、Images。
+
+            适合：非 Next.js 静态站点、想用一个厂商同时管边缘和前端的场景。
+
+            **速率层面**，两家对正常流量都不限流。
+
+            - Vercel Hobby **100 部署/天**
+            - Cloudflare Pages **无限**
+
+            如果你每天部署很多次，Cloudflare Pages 更友好。
+
+            **混合模式**：Vercel 跑 Next.js 前端，Cloudflare 在前面当 CDN/DNS/WAF 层。有边缘逻辑的生产 SaaS 常见组合。
           en: |
             Both are excellent for static / JAMstack frontends; the
             choice is about framework fit and total cost.
@@ -87,12 +145,29 @@ id: x-ratelimit-6-vercel
         confidence: 8
         reference:
           - docs/6-vercel.en.md
-          - docs/1-cloudflare.en.md
+          - docs/3-cloudflare.en.md
 
       - id: vercel-vs-cloudflare-vs-aws-amplify
         question:
           en: Vercel vs Cloudflare Pages vs AWS Amplify for frontend hosting?
+          cn: 前端托管，三家 Vercel / Cloudflare Pages / AWS Amplify 怎么选？
         answer:
+          cn: |
+            三个都靠谱，生态不同。
+
+            **Vercel**：Next.js DX 最佳，平台 opinionated，成本最可预测。框架就是 Next.js 时选它。
+
+            **Cloudflare Pages**：规模化最便宜（免费套餐含无限静态站点），跟 Workers / KV / R2 的边缘集成最紧。Cloudflare 已经是你的边缘厂商时选它。
+
+            **AWS Amplify**：跟 AWS 服务（Cognito、AppSync、Lambda 等）原生集成。托管本身够用；价值在 AWS 栈上的胶水。栈的其它部分都在 AWS 时选它。
+
+            **速率层面**：三家对流量都不限流。**部署限制**不同：
+
+            - Vercel Hobby **100 次/天**
+            - Cloudflare Pages **无限**
+            - AWS Amplify 按账号算 build minutes
+
+            如果瓶颈是 build minutes 或部署频次，Cloudflare Pages 最慷慨。
           en: |
             Three reasonable choices, with different ecosystems.
 
@@ -119,5 +194,4 @@ id: x-ratelimit-6-vercel
         confidence: 8
         reference:
           - docs/6-vercel.en.md
-          - docs/1-cloudflare.en.md
-
+          - docs/3-cloudflare.en.md

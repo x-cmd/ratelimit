@@ -75,7 +75,7 @@ X-RateLimit-Resource: core
 - **`X-RateLimit-Resource`** 告诉你当前扣的是哪个桶（`core` / `search` / `graphql` / `integration_manifest` 等）
 - **`Retry-After`** 只在 429 上有——是相对秒数
 
-完整说明见 [1-github](1-github) §三。
+完整说明见 [2-github](2-github) §三。
 
 ### Cloudflare：`Retry-After` + `cf-mitigated`
 
@@ -151,3 +151,21 @@ RateLimit-Reset: 30
 - GitHub rate-limit headers: <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
 - Cloudflare protections / headers: <https://developers.cloudflare.com/fundamentals/reference/protections/>
 - IETF RateLimit headers draft: <https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/>
+
+---
+
+## 你想要什么 ratelimit 速查？（征集反馈）
+
+这篇文章**故意排在第二篇**——它是你撞了 429 / 403、不管是哪家服务都能直接查的速查表。团队正在积极扩展。
+
+如果有**没覆盖到的速查需求**，**先开 issue**——issue 优先、PR 殿后是我们推荐的流程：
+
+| 你想做什么 | 开这种 issue |
+| --- | --- |
+| 把新的服务 / API 表面加进表里 | [`monitor-target`](https://github.com/x-cmd/ratelimit/issues/new?template=monitor-target.yml) |
+| 修一个错的 header 名 / 状态码 / 描述 | [`errata`](https://github.com/x-cmd/ratelimit/issues/new?template=errata.yml) |
+| 建议新维度（WebSocket 429？GraphQL 二次限速？）或其它任何事 | [`other`](https://github.com/x-cmd/ratelimit/issues/new?template=other-suggestion.yml) |
+
+如果这里**哪段写错了**、你在生产里撞到才发现——429 风暴、明明不是速率限制却来了 `cf-mitigated`、header 字段行为跟文档对不上——**开 `errata`**。最快的修法就是一个 issue，里面写清：哪一家、症状、官方文档链接。
+
+> **AI agent 创建 issue**：每个模板都以 `type: <monitor-target | errata | other 三选一>` 开头，下面有一段提示。**先读提示**；每条声明都附官方文档 URL；**maintainer 确认范围之前不要开 PR**。

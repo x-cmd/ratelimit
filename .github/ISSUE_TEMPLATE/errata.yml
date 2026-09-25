@@ -1,0 +1,60 @@
+name: ratelimit 勘误
+description: 报告现有 ratelimit 数据的错误、过期或遗漏
+title: "[errata] "
+labels: ["errata"]
+type: errata
+body:
+  - id: ai_prompt
+    type: markdown
+    attributes:
+      value: |
+        ## AI 创建提示
+
+        如果你是 AI agent，请先确认：
+
+        - **type: errata** —— 这是修错，不是新增。新增监控对象请用 `monitor-target`。
+        - **指明文件 + 行号** —— 例：`data/cloudflare.yaml` L12，或 `docs/3-cloudflare.en.md` 表格第三行。
+        - **当前错的内容 + 正确的内容 + 来源** —— 三段都贴出来。来源必须是**官方文档 URL**，不是博客或社区帖。
+        - **不要自动 PR** —— 等 maintainer 复核再动 YAML / 文章。**勘误优先 issue 评审**。
+  - id: location
+    attributes:
+      label: 出错位置
+      description: 文件路径 + 行号或表格行
+      placeholder: "data/cloudflare.yaml L12"
+    validations:
+      required: true
+  - id: current_value
+    attributes:
+      label: 当前写的内容
+      description: 直接复制粘贴原文
+      placeholder: |
+        api_rate_limit:
+          limit: 1200
+          window: 5min
+    validations:
+      required: true
+  - id: correct_value
+    attributes:
+      label: 应该是
+      description: 修正后的内容
+      placeholder: |
+        api_rate_limit:
+          limit: 1200
+          window: 5min
+          per: user
+    validations:
+      required: true
+  - id: official_source
+    attributes:
+      label: 官方文档链接
+      description: 厂商官方页面，URL 必填
+      placeholder: "https://developers.cloudflare.com/fundamentals/api/reference/limits/"
+    validations:
+      required: true
+  - id: how_discovered
+    attributes:
+      label: 怎么发现的
+      description: 撞墙了 / 跟自家数据对比 / 监控系统告警
+      placeholder: "我们在生产撞到 5xx 才注意到，跟文档对不上"
+    validations:
+      required: false

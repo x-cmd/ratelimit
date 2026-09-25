@@ -1,5 +1,5 @@
 ---
-name: 2-rate-limit-headers-cheatsheet
+name: 1-rate-limit-headers-cheatsheet
 description: Cross-service rate-limit response headers quick reference. GitHub uses X-RateLimit-* family (Reset is UNIX epoch). Cloudflare uses Retry-After + cf-mitigated (NOT X-RateLimit-*). Search engines (Bing/Yahoo/DuckDuckGo/Baidu/Shenma) mostly bare 429. IETF RateLimit-* draft is the emerging standard.
 type: reference
 
@@ -45,5 +45,5 @@ official:
   cloudflare_protections: https://developers.cloudflare.com/fundamentals/reference/protections/
   ietf_draft: https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/
 related:
-  github_article: docs/1-github.cn.md
+  github_article: docs/2-github.cn.md
   cloudflare_article: docs/3-cloudflare.cn.md

@@ -1,13 +1,21 @@
 id: x-ratelimit-5-tencent
 
-<data>:
+data:
   - name:
       en: tencent
+      cn: 腾讯云
     qa:
       - id: tencent-default-qps
         question:
           en: What's Tencent Cloud API 3.0's default rate limit?
+          cn: 腾讯云 API 3.0 的默认速率限制是多少？
         answer:
+          cn: |
+            默认 **20 次/秒/用户/API**。窗口 1 秒。
+
+            比阿里云的 100 QPS 默认**紧**——做腾讯云集成时把 20 QPS 当基线，别抱乐观预期。
+
+            特定产品可能公布更高配额（CVM 50-100 QPS、COS 更高等）——用 `DescribeApiRateLimit` 读实际配额。
           en: |
             20 requests per second per user per API by default.
             Window is 1 second. This is tighter than Aliyun's
@@ -18,12 +26,21 @@ id: x-ratelimit-5-tencent
             DescribeApiRateLimit to read actual quotas.
         confidence: 9
         reference:
-          - docs/3-tencent.en.md
+          - docs/5-tencent.en.md
+          - docs/5-tencent.cn.md
 
       - id: tencent-describe-api-rate-limit
         question:
           en: What's the DescribeApiRateLimit API for?
+          cn: DescribeApiRateLimit API 有什么用？
         answer:
+          cn: |
+            返回你账号对任意 API 的**实际速率配置**：最大请求数、策略（RegionLevel / GlobalLevel 等）、窗口秒数。
+
+            两个用途：
+
+            1. **集成上线前**确认实际配额，而不是默认 20 QPS
+            2. **定期监控**账号级聚合配额的健康度
           en: |
             It returns your account's actual rate-limit
             configuration for any API: max requests, strategy
@@ -34,12 +51,21 @@ id: x-ratelimit-5-tencent
             on your account-level aggregate quota.
         confidence: 9
         reference:
-          - docs/3-tencent.en.md
+          - docs/5-tencent.en.md
+          - docs/5-tencent.cn.md
 
       - id: tencent-headers-format
         question:
           en: What do Tencent Cloud's X-RateLimit-* headers mean?
+          cn: 腾讯云的 X-RateLimit-* 响应头是什么含义？
         answer:
+          cn: |
+            - **`X-RateLimit-Limit`** —— 当前窗口上限
+            - **`X-RateLimit-Remaining`** —— 当前窗口剩余调用数
+            - **`X-RateLimit-Window`** —— 窗口长度（秒）
+            - **`Retry-After`** —— 429 才有，表示退避秒数（整数秒）
+
+            几乎跟 IETF `RateLimit-*` 草案（RFC 9745）一致，只是保留了历史遗留的 `X-` 前缀。
           en: |
             X-RateLimit-Limit = current window ceiling. X-RateLimit-
             Remaining = remaining calls in window. X-RateLimit-Window
@@ -49,12 +75,20 @@ id: x-ratelimit-5-tencent
             just with the historical X- prefix.
         confidence: 9
         reference:
-          - docs/3-tencent.en.md
+          - docs/5-tencent.en.md
+          - docs/5-tencent.cn.md
 
       - id: tencent-vs-aliyun-wechat-miniprogram
         question:
           en: For a WeChat Mini Program backend, Tencent Cloud or Aliyun?
+          cn: 微信小程序后端，选腾讯云还是阿里云？
         answer:
+          cn: |
+            **腾讯云有微信生态优势**。腾讯的 CloudBase (TCB)、Serverless Cloud Function (SCF)、API Gateway、COS 都有原生的微信小程序集成——官方的 `wx-server-sdk` 和小程序云函数模板都直接对接这些。如果你的小程序后端跟微信 API（登录、支付、订阅消息、客服 webhook）紧耦合，腾讯云的工具链深度和低摩擦有意义。
+
+            **阿里云匹配更宽泛的国内云功能集**，但没有微信特定的服务。多区域、多产品栈（ECS + RDS + OSS + CDN + WAF 全在一个控制台、一份账单）整合时选阿里云——小程序只是栈上多个负载之一。
+
+            **速率含义**：腾讯默认 20 QPS 比阿里 100 QPS 紧。SCF / CloudBase 的 serverless 模型能吸收本来会撞腾讯 per-user API 限制的突发流量；在阿里那边通常直接按负载把 ECS 或 FC 规格算好。
           en: |
             **Tencent Cloud has the WeChat-ecosystem edge.** Tencent's
             CloudBase (TCB), Serverless Cloud Function (SCF),
@@ -82,13 +116,23 @@ id: x-ratelimit-5-tencent
             instances to the workload up-front.
         confidence: 8
         reference:
-          - docs/3-tencent.en.md
-          - docs/2-aliyun.en.md
+          - docs/5-tencent.en.md
+          - docs/4-aliyun.en.md
 
       - id: tencent-vs-aliyun-serverless-miniprogram
         question:
           en: Tencent CloudBase vs Aliyun FC for a Mini Program serverless backend?
+          cn: 小程序 serverless 后端，腾讯 CloudBase 还是阿里 FC？
         answer:
+          cn: |
+            **腾讯 CloudBase (TCB)** 就是为小程序设计的——`wx.cloud.*` SDK 直接调它，不用 API Gateway。微信登录、支付、存储 SDK 开箱即用。
+
+            **阿里 FC (Function Compute)** 是通用 serverless 平台；对接小程序要加 API Gateway + 自定义鉴权。配置更多，但能跟 FC、ECS、OSS 以及阿里栈其他部分统一计费。
+
+            **速率层面**，两家都按**函数并发**和**账号请求率**双限流。CloudBase 默认按小程序流量模式（低并发、突发）调过；FC 的默认更通用。
+
+            - 小程序流量模式清晰有界 → CloudBase 更顺
+            - 预期从小程序扩展到更广负载 → FC 保持单一平台
           en: |
             **Tencent CloudBase (TCB)** is built specifically for
             Mini Programs — the `wx.cloud.*` SDK calls into it
@@ -112,6 +156,5 @@ id: x-ratelimit-5-tencent
             platform.
         confidence: 7
         reference:
-          - docs/3-tencent.en.md
-          - docs/2-aliyun.en.md
-
+          - docs/5-tencent.en.md
+          - docs/4-aliyun.en.md

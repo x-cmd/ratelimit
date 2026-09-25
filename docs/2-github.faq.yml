@@ -1,4 +1,4 @@
-id: x-ratelimit-1-github
+id: x-ratelimit-2-github
 
 data:
   - name:
@@ -30,8 +30,8 @@ data:
             See Section 1 for full table.
         confidence: 10
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-secondary-rate-limit
         question:
@@ -56,8 +56,8 @@ data:
             Avoid by: spacing requests (parallel ≤ 5-10), conditional requests (`If-None-Match` returns 304), avoiding tight polling, picking the right download surface.
         confidence: 9
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-403-vs-429
         question:
@@ -94,8 +94,8 @@ data:
             Check `X-RateLimit-Remaining` header.
         confidence: 9
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-x-ratelimit-reset-format
         question:
@@ -126,8 +126,8 @@ data:
             Common footgun — assuming `X-RateLimit-Reset` is relative.
         confidence: 10
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-pat-rate-limit
         question:
@@ -152,8 +152,8 @@ data:
             **Generate PAT**: GitHub → Settings → Developer settings → Personal access tokens → Generate new token.
         confidence: 10
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-search-api-limit
         question:
@@ -174,8 +174,8 @@ data:
             **REST primary quota does NOT cover Search** — separate buckets. Check `X-RateLimit-Resource` header (`core` / `search` / `graphql` / etc.).
         confidence: 10
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-actions-rate-limit
         question:
@@ -200,8 +200,8 @@ data:
             **Fix**: use PAT (per-token isolation), or GitHub App installation token (per-installation isolation).
         confidence: 10
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
   - name:
       en: download without API quota
@@ -238,8 +238,8 @@ data:
             **Standard pattern**: 1 API call to list + CDN to download = 1 quota use, unlimited downloads.
         confidence: 9
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-raw-bypasses-ratelimit
         question:
@@ -264,8 +264,8 @@ data:
             If you hit raw's ~60/min limit, it's likely single-IP concurrency. Fix: jsDelivr CDN mirror, IP pool.
         confidence: 9
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: jsdelivr-github-capabilities
         question:
@@ -296,8 +296,8 @@ data:
             - **Eventually consistent**: new release takes seconds to minutes
         confidence: 9
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
       - id: github-archive-vs-clone
         question:
@@ -340,8 +340,8 @@ data:
             4. Want to develop / patch → git clone (always)
         confidence: 9
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
   - name:
       en: large repo handling
@@ -402,7 +402,7 @@ data:
             LFS pointers stay small (a few KB); consumers fetch only what they need. `export-ignore` makes the tarball smaller.
         confidence: 8
         reference:
-          - docs/1-github.en.md
+          - docs/2-github.en.md
 
       - id: github-use-without-downloading
         question:
@@ -429,7 +429,7 @@ data:
             Network traffic counts against GitHub's CDN, **NOT** your API quota — doesn't go through `api.github.com`.
         confidence: 9
         reference:
-          - docs/1-github.en.md
+          - docs/2-github.en.md
 
       - id: x-eget-handles-github-download
         question:
@@ -464,8 +464,8 @@ data:
             See `___x_cmd_eget_api_*` functions for the actual code.
         confidence: 9
         reference:
-          - docs/1-github.en.md
-          - docs/1-github.cn.md
+          - docs/2-github.en.md
+          - docs/2-github.cn.md
 
   - name:
       en: cheat sheets
@@ -505,7 +505,7 @@ data:
             No API quota (git protocol, not `api.github.com`), no LFS unless explicitly fetched.
         confidence: 9
         reference:
-          - docs/1-github.en.md
+          - docs/2-github.en.md
 
       - id: npm-package-cdn-version
         question:
@@ -546,7 +546,7 @@ data:
             No auth, no npm/GitHub rate limit, ~50M requests/month free tier. Public packages only.
         confidence: 9
         reference:
-          - docs/1-github.en.md
+          - docs/2-github.en.md
 
   - name:
       en: not covered here (separate features)

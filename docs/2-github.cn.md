@@ -21,8 +21,8 @@ x-json-ld:
 | 限速类型 | 认证 | 上限 | 窗口 |
 | --- | --- | --- | --- |
 | **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req / token 或 installation | 1 小时 |
+| **Primary REST** | `${{ secrets.GITHUB_TOKEN }}`（Actions 自动 token） | 1000 req / repo（同 repo 的所有 workflow run 共享） | 1 小时 |
 | **Primary REST** | 无 | 60 req / source IP | 1 小时 |
-| **GitHub Actions 自动 token** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req / repo（同一 repo 的所有 workflow run 共享）| 1 小时 |
 | **GraphQL** | PAT / OAuth / GitHub App（任一即可） | 5000 点 / token（按查询成本算） | 1 小时 |
 | **Search** | PAT / OAuth / GitHub App（任一即可） | 30 req / user | 1 分钟 |
 | **Actions API** | PAT / OAuth / GitHub App（任一即可） | 1000 req / repo | 1 小时 |
@@ -38,6 +38,7 @@ x-json-ld:
 **各限速类型 mechanic**：
 
 - **Primary REST** —— PAT / OAuth / GitHub App 的用户令牌都用这个桶（GitHub App 按 installation 算）。配额按 token 或 installation 算，不是按 GitHub 账号——3 把 PAT = 3 个独立预算。GitHub Apps 可[申请更高配额](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)，但典型工作流 5000/小时够用。
+- **Primary REST（Actions 自动 token）** —— `${{ secrets.GITHUB_TOKEN }}` 是 GitHub 给 workflow run 自动签发的 token，本质上**也是 Primary REST 桶**，但按 **repo** 算预算、每 repo 只有 1000/h，所以同一个 repo 的所有 workflow run 抢同一份额度。CI 撞墙的故事和权限声明示例见第五节。
 
 - **GraphQL** —— 每个查询按**最高成本字段**扣 1-10 点：
 
@@ -57,16 +58,20 @@ x-json-ld:
 
   **查消耗**：query 里加 `rateLimit { cost remaining resetAt }` 字段直接读。
 
+  **REST 和 GraphQL 可以混用摊配额** —— `X-RateLimit-Resource` 暴露的是 `graphql`（5000 点/小时）和 `core`（5000 req/小时）**两个独立预算**。同一把 token，分开两个桶，不必二选一。一个常见模式：相关性高的多个字段用一次 GraphQL 拿（少一次往返、总成本更容易封顶）；单点查询走 REST，省去构造 GraphQL query 的成本。
+
+  **汇总类功能用 GraphQL 显著更划算** —— 一个屏幕要同时看 star 数、最新 release、contributor 数、语言分布、过去 30 天 merged PR 数，REST 串起来是 5 次调用（加上时间窗口就是 8+ 次 search 调用）。一个 GraphQL 查询拿到同样数据，扣的是 5000 点/小时那个桶，不会跟 30/分钟 search 桶抢。真实案例：`x repo card` 从 **每张卡 11 次 HTTP（撞 30/min search 桶，每小时 ~180 张）** 优化到 **每张卡 3 次 HTTP（撞 5000/h graphql 桶，每小时 ~2500 张）** —— 只把 search 聚合搬进 GraphQL root-level 跟 `repository(...)` 同级，**~14× 吞吐提升**。故事见 [`x-bash/repo/.x-cmd/story/260824.x-repo-card-graphql-consolidation.md`](https://github.com/x-bash/repo/blob/main/.x-cmd/story/260824.x-repo-card-graphql-consolidation.md)。
+
 - **Search** —— 30/分钟，独立桶。搜索比 REST 主限速贵得多（每次都要重做索引 + 排序）。REST 主配额**不**覆盖 `/search/*`——是分开的桶。
 
 - **Actions API** —— 1000/小时/repo，`/repos/<o>/<r>/actions/*` 下所有端点共用。重度轮询 Actions 的 dashboard 集成会撞。
 
-- **二级** —— 启发式滥用检测，无公开阈值，触发条件：
-  - 短时间内突发（即使主配额剩很多）
-  - 并发在途请求多
-  - 短时间内重复相同内容
+- **二级** —— 主配额之外的滥用检测层，**没有公开阈值**。GitHub 看到下面任一种情况就会触发：
+  - **突发流量** —— 短时间内请求量暴涨，主配额还有余量也会触发
+  - **并发堆积** —— 同时在飞的请求太多
+  - **重复锤击** —— 几秒内反复请求同一资源
 
-  触发时返回 429 + `Retry-After`，**跟主限速 429 看起来一样**。单从响应分不出哪个桶触发。
+  触发时返回 429 + `Retry-After`，**跟主限速的 429 完全一样**——没有专门的 header 标明"这是二级"，只能事后回头查自己的流量模式反推是哪个桶触发的。
 
 ---
 
@@ -167,6 +172,31 @@ def call_github(url, headers, max_retries=5):
 - 默认开启，不用额外配置。
 - **配额 1000 req/小时/repo**——所有 Actions API 端点共用这一个预算。
 
+**声明权限**（跟 ratelimit 没直接关系，但属于相邻话题——token 实际能做什么完全看你 `permissions:` 白名单了什么）：
+
+```yaml
+# .github/workflows/ci.yml
+name: ci
+on: [push, pull_request]
+
+permissions:
+  contents: read        # 拉取仓库代码
+  issues: write         # 开 / 评论 issue
+  pull-requests: write  # 评论 / 打 label PR
+  checks: write         # 写 check run 结果
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+               https://api.github.com/repos/${{ github.repository }}/issues
+```
+
+2023 年起 workflow 级别的默认权限是 `contents: read`，其他都得显式 `permissions:` 列出来——不列出来的，token 就算 repo 默认 branch 放行它也没权限写。
+
 **CI 撞墙陷阱**：N 个 workflow 并发跑同一个 repo，全部用 GITHUB_TOKEN——它们**共享 1000/小时**。一个 workflow 写炸（大量轮询），其他 workflow 一起 429。
 
 修法：
@@ -179,11 +209,6 @@ def call_github(url, headers, max_retries=5):
 
 ---
 
-## 来源
+## 来源 -- 以 GitHub 博客为准
 
-- Primary REST: <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
-- GraphQL: <https://docs.github.com/en/graphql/overview/resource-limitations>
-- Search: <https://docs.github.com/en/rest/search>
-- Actions: <https://docs.github.com/en/rest/actions>
-- Secondary: <https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>
-- GitHub Apps auth: <https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app>
+- Secondary rate limits（综合参考，含主限速 / 二级 / Actions 的工程视角说明）：<https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>

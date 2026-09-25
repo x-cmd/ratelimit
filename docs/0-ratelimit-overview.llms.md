@@ -20,7 +20,7 @@ highlights:
 
 - "README targets GitHub visitors; `docs/` are served at x-cmd.com/ratelimit"
 - Vendors covered: Cloudflare (REST + per-product), Aliyun (default 100 QPS + Throttling.* codes), Tencent (default 20 QPS + X-RateLimit-*), GitHub (5000/hr REST + 5000/hr GraphQL + 30/min Search + secondary), Vercel (GB-hours + Edge), BandwagonHost (port 25 + bandwidth)
-- "Cross-vendor reference: `docs/7-rate-limit-headers-cheatsheet.en.md` covers Retry-After, X-RateLimit-*, IETF RateLimit-* draft (RFC 9745)"
+- "Cross-vendor reference: `docs/1-rate-limit-headers-cheatsheet.en.md` covers Retry-After, X-RateLimit-*, IETF RateLimit-* draft (RFC 9745)"
 - Aliyun is the outlier: no standard rate-limit headers, custom Code body field
 - GitHub most-documented: 5000/hr REST, GraphQL points, secondary heuristic, X-RateLimit-* family
 

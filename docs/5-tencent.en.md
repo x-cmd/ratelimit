@@ -144,7 +144,8 @@ Specific numbers need CI scraper to write to
 - `DescribeApiRateLimit` API reference:
   <https://cloud.tencent.com/document/api/306/7234>
 - Per-product rate limits (look in each product's API doc
-  under "调用限制" or "使用限制"):
+  under "API Call Limits" or "Usage Limits" — Tencent Cloud docs
+  typically label these as 调用限制 / 使用限制):
   - CVM: <https://cloud.tencent.com/document/product/213>
   - CDB: <https://cloud.tencent.com/document/product/236>
   - COS: <https://cloud.tencent.com/document/product/436>

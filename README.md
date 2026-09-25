@@ -26,12 +26,13 @@ canonical site at `x-cmd.com/ratelimit`).
 
 | Vendor | Surface covered | Status | Article |
 | --- | --- | --- | --- |
-| Cloudflare | REST API + per-product HTTP caps | unverified | [`docs/1-cloudflare.en.md`](./docs/1-cloudflare.en.md) |
-| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`docs/2-aliyun.en.md`](./docs/2-aliyun.en.md) |
-| 腾讯云 (Tencent Cloud) | Cloud API 3.0 rate limits | unverified | [`docs/3-tencent.en.md`](./docs/3-tencent.en.md) |
-| GitHub | REST + GraphQL + Actions + secondary limits | verified 2024-11 | [`docs/4-github.en.md`](./docs/4-github.en.md) |
-| Vercel | Function/edge quotas + REST API | unverified | [`docs/5-vercel.en.md`](./docs/5-vercel.en.md) |
-| BandwagonHost | VPS-level port / bandwidth / connection caps | unverified | [`docs/6-bandwagonhost.en.md`](./docs/6-bandwagonhost.en.md) |
+| GitHub | REST + GraphQL + Actions + secondary limits | verified 2024-11 | [`docs/2-github.en.md`](./docs/2-github.en.md) |
+| Cloudflare | REST API + per-product HTTP caps | unverified | [`docs/3-cloudflare.en.md`](./docs/3-cloudflare.en.md) |
+| 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`docs/4-aliyun.en.md`](./docs/4-aliyun.en.md) |
+| 腾讯云 (Tencent Cloud) | Cloud API 3.0 rate limits | unverified | [`docs/5-tencent.en.md`](./docs/5-tencent.en.md) |
+| Vercel | Function/edge quotas + REST API | unverified | [`docs/6-vercel.en.md`](./docs/6-vercel.en.md) |
+| BandwagonHost | VPS-level port / bandwidth / connection caps | unverified | [`docs/7-bandwagonhost.en.md`](./docs/7-bandwagonhost.en.md) |
+| Cross-vendor | HTTP rate-limit headers, backoff | n/a | [`docs/1-rate-limit-headers-cheatsheet.en.md`](./docs/1-rate-limit-headers-cheatsheet.en.md) |
 
 ## At a glance
 
@@ -66,8 +67,25 @@ canonical site at `x-cmd.com/ratelimit`).
 - `LICENSE` — Apache 2.0 (code, prose, scripts).
 - `LICENSE-data` — CC-BY-4.0 (data files under `data/`).
 
-## Contributing
+## Contributing — welcome!
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md). External PRs are
-welcome for data corrections, new vendor files, and article
-edits; the team signs off on every change.
+External PRs are welcome for data corrections, new vendor
+files, and article edits; the team signs off on every change.
+**We recommend issue-first, PR-second** — open an issue first,
+get a maintainer's read on scope, then send the PR.
+
+Three issue templates, pick the closest fit:
+
+| Want to... | Issue type |
+| --- | --- |
+| Add a new vendor / API surface to monitor | [`monitor-target`](https://github.com/x-cmd/ratelimit/issues/new?template=monitor-target.yml) |
+| Fix a wrong / outdated rate-limit number | [`errata`](https://github.com/x-cmd/ratelimit/issues/new?template=errata.yml) |
+| Improve docs, FAQ, schema, or anything else | [`other`](https://github.com/x-cmd/ratelimit/issues/new?template=other-suggestion.yml) |
+
+> **AI agents creating issues** — the templates include
+> `type: <one of the three>` prefixes and per-template prompts.
+> Read the prompt block first; include the official-docs URL
+> for any claim; don't open a PR before a maintainer confirms
+> scope.
+
+Full contribution flow in [`CONTRIBUTING.md`](./CONTRIBUTING.md).

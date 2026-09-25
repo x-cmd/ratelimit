@@ -75,7 +75,7 @@ X-RateLimit-Resource: core
 - **`X-RateLimit-Resource`** tells you which bucket (`core` / `search` / `graphql` / `integration_manifest` / etc.)
 - **`Retry-After`** only on 429 — relative seconds
 
-Full details in [1-github](1-github) §3.
+Full details in [2-github](2-github) §3.
 
 ### Cloudflare: `Retry-After` + `cf-mitigated`
 
@@ -151,3 +151,31 @@ Regardless of service, when you see 429 / 403:
 - GitHub rate-limit headers: <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
 - Cloudflare protections / headers: <https://developers.cloudflare.com/fundamentals/reference/protections/>
 - IETF RateLimit headers draft: <https://datatracker.ietf.org/doc/draft-ietf-httpapis-ratelimit-headers/>
+
+---
+
+## What rate-limit lookup do you need? (call for feedback)
+
+This article is the **second** in the repo on purpose — it's the
+table you reach for when a request hits 429 / 403 and you want to
+know what to do, regardless of which service you're calling. The
+team is actively looking to extend it. If you have a lookup need
+that isn't covered here, **file an issue first** — issue-first,
+PR-second is the workflow we recommend:
+
+| You want to... | Open this issue type |
+| --- | --- |
+| Add a new service / API surface to the table | [`monitor-target`](https://github.com/x-cmd/ratelimit/issues/new?template=monitor-target.yml) |
+| Fix a wrong header name, status code, or description | [`errata`](https://github.com/x-cmd/ratelimit/issues/new?template=errata.yml) |
+| Suggest a new dimension (WebSocket 429s? GraphQL secondary?) or anything else | [`other`](https://github.com/x-cmd/ratelimit/issues/new?template=other-suggestion.yml) |
+
+If something here is **wrong** and you caught it in production —
+debugging a 429 storm, a `cf-mitigated` that wasn't a rate limit,
+a header field that didn't behave as documented — please file an
+`errata`. The fastest way to get it fixed is one issue with the
+service, the symptom, and a link to the official docs.
+
+> **AI agents creating issues**: each template starts with
+> `type: <one of monitor-target | errata | other>` and a prompt
+> block. Read the prompt first; cite the official-docs URL for
+> every claim; don't open a PR until a maintainer confirms scope.

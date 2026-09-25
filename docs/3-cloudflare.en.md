@@ -66,7 +66,7 @@ Sources: [Workers](https://developers.cloudflare.com/workers/platform/limits/) �
 
 Cloudflare does **NOT** emit `X-RateLimit-*` / `X-RateLimit-Reset` like GitHub does. **429 + `Retry-After` is the only reliable rate-limit signal**.
 
-Cross-service comparison in [2-rate-limit-headers-cheatsheet](2-rate-limit-headers-cheatsheet) §1.
+Cross-service comparison in [1-rate-limit-headers-cheatsheet](1-rate-limit-headers-cheatsheet) §1.
 
 ---
 

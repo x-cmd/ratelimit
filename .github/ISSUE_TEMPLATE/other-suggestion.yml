@@ -1,0 +1,56 @@
+name: 其它建议
+description: 文档 / 文章 / FAQ / 速查表的改进建议，或 ratelimit 相关的一般问题
+title: "[other] "
+labels: ["other"]
+type: other
+body:
+  - id: ai_prompt
+    type: markdown
+    attributes:
+      value: |
+        ## AI 创建提示
+
+        如果你是 AI agent，请先确认：
+
+        - **type: other** —— 修错用 `errata`，加监控对象用 `monitor-target`。本类只收其它改进。
+        - **具体可操作** —— 不要只说"可以更好"，写明改什么、在哪改、为什么。
+        - **如果能 PR** —— 在 "Willing to PR" 字段标 yes / review-first / no。
+        - **速查需求** —— 想要 ratelimit 数据但本仓库没有？这里说，maintainer 评估后转 `monitor-target`。
+  - id: category
+    attributes:
+      label: 类型
+      description: 选择最贴近的
+      options:
+        - label: 文档 / 文章表述不清楚
+        - label: FAQ 缺一个问题
+        - label: 文章结构 / 章节顺序
+        - label: 想要一个新的速查维度（例：WebSocket 限速 / GraphQL 二次限速）
+        - label: 想要一个厂商但不在已收录列表里（→ 会转 monitor-target）
+        - label: 仓库流程 / CI / schema
+        - label: 其它
+    validations:
+      required: true
+  - id: description
+    attributes:
+      label: 建议 / 需求
+      description: 说清楚现状、想要的样子、为什么
+      placeholder: |
+        现状：docs/2-github.cn.md 第 4 节只讲了 5 个下载方式，没说 raw.githubusercontent.com 的软限制是多少
+        想要：加一段说明 60-100 req/min/IP 的观察值
+        原因：CI 跑批量拉 raw 时撞过，想让后来人少踩
+    validations:
+      required: true
+  - id: willing_to_pr
+    attributes:
+      label: 愿意 PR 吗？
+      description: "yes / review-first / no"
+      placeholder: "review-first"
+    validations:
+      required: true
+  - id: ratelimit_need
+    attributes:
+      label: 有没有速查需求 / 报错想反馈？
+      description: 可选。如果你想要某个 ratelimit 数据但本仓库没有，maintainer 会评估要不要新增监控对象
+      placeholder: "想要 Discord API ratelimit 的速查（rate limit per route + global）"
+    validations:
+      required: false

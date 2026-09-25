@@ -39,13 +39,13 @@ x-json-ld:
 
 | 厂商 | 覆盖面 | 状态 | 文章 |
 | --- | --- | --- | --- |
-| **GitHub** | REST + GraphQL + Actions + 二级 + **五种下载策略（release / HTML / archive / raw / CDN）** | 已核实 2024-11 | [`1-github`](./1-github.en.md) |
+| **GitHub** | REST + GraphQL + Actions + 二级 + **五种下载策略（release / HTML / archive / raw / CDN）** | 已核实 2024-11 | [`2-github`](./2-github.en.md) |
 | Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`3-cloudflare`](./3-cloudflare.en.md) |
 | 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`4-aliyun`](./4-aliyun.en.md) |
 | 腾讯云 | Cloud API 3.0 | 待核实 | [`5-tencent`](./5-tencent.en.md) |
 | Vercel | 函数/Edge + REST API | 待核实 | [`6-vercel`](./6-vercel.en.md) |
 | BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`7-bandwagonhost`](./7-bandwagonhost.en.md) |
-| 跨厂商 | HTTP 速率响应头、backoff | n/a | [`2-rate-limit-headers-cheatsheet`](./2-rate-limit-headers-cheatsheet.en.md) |
+| 跨厂商 | HTTP 速率响应头、backoff | n/a | [`1-rate-limit-headers-cheatsheet`](./1-rate-limit-headers-cheatsheet.en.md) |
 
 ## 怎么使用
 
@@ -70,13 +70,13 @@ yq '.header_conventions' data/*.yaml
 
 每个厂商有一篇专文，讲实际细节（响应头语义、错误码约定、坑）：
 
-- [`1-cloudflare`](./1-cloudflare.en.md) —— REST 配额、`cf-mitigated` 与 429 的区别
-- [`2-aliyun`](./2-aliyun.en.md) —— 开放 API 每用户 QPS、`Throttling.*` 错误码体系
-- [`3-tencent`](./3-tencent.en.md) —— Cloud API 3.0、`X-RateLimit-*` 响应头、`DescribeApiRateLimit`
-- [`4-github`](./4-github.en.md) —— REST + GraphQL + Actions + Search + 二级速率、响应头语义
+- [`2-github`](./2-github.en.md) —— REST + GraphQL + Actions + Search + 二级速率、响应头语义
+- [`3-cloudflare`](./3-cloudflare.en.md) —— REST 配额、`cf-mitigated` 与 429 的区别
+- [`4-aliyun`](./4-aliyun.en.md) —— 开放 API 每用户 QPS、`Throttling.*` 错误码体系
+- [`5-tencent`](./5-tencent.en.md) —— Cloud API 3.0、`X-RateLimit-*` 响应头、`DescribeApiRateLimit`
 - [`6-vercel`](./6-vercel.en.md) —— Function / Edge Function 配额、REST API 默认 1 RPS、RFC 9745 头
 - [`7-bandwagonhost`](./7-bandwagonhost.en.md) —— VPS 端口 25 屏蔽、带宽上限、连接上限
-- [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.en.md) —— 跨厂商 HTTP 速率响应头速查
+- [`1-rate-limit-headers-cheatsheet`](./1-rate-limit-headers-cheatsheet.en.md) —— 跨厂商 HTTP 速率响应头速查
 
 ## 核实状态
 

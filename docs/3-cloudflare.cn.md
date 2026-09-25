@@ -66,7 +66,7 @@ Workers / KV / R2 / D1 按产品算——和 REST API 配额**完全分开**。W
 
 CF **不像 GitHub**，没有 `X-RateLimit-*` / `X-RateLimit-Reset` 系列。**429 + `Retry-After` 是唯一可靠的限速信号**。
 
-跨服务对比见 [2-rate-limit-headers-cheatsheet](2-rate-limit-headers-cheatsheet) §一。
+跨服务对比见 [1-rate-limit-headers-cheatsheet](1-rate-limit-headers-cheatsheet) §一。
 
 ---
 

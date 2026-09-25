@@ -1,13 +1,29 @@
 id: x-ratelimit-0-ratelimit-overview
 
-<data>:
+data:
   - name:
       en: rate-limit-fundamentals
+      cn: 速率限制基础
     qa:
       - id: what-is-rate-limit
         question:
           en: What is an API rate limit?
+          cn: API 速率限制是什么？
         answer:
+          cn: |
+            速率限制是给客户端在**一个时间窗口内**的请求数设的上限。最常见的形式是 "X 次请求 / Y 秒（或分钟、小时）"。
+
+            厂商设上限两个目的：
+
+            1. **保护服务** —— 防止失控的客户端 / DoS
+            2. **套餐分级** —— 免费版 vs 付费版的能力区别
+
+            速率信息通过两种方式传达：
+
+            - **响应头** —— 标准的 `X-RateLimit-Limit` 等 header
+            - **错误码** —— 例如阿里云的 `Throttling.*` 系列
+
+            不同厂商用不同的方式，所以读法不一样。
           en: |
             A rate limit caps how many requests a client can make
             to an API within a defined window. Most commonly
@@ -20,11 +36,25 @@ id: x-ratelimit-0-ratelimit-overview
         confidence: 10
         reference:
           - docs/0-ratelimit-overview.en.md
+          - docs/0-ratelimit-overview.cn.md
 
       - id: what-is-rate-limit-window
         question:
           en: What's a "rate limit window"?
+          cn: 什么是"速率限制窗口"？
         answer:
+          cn: |
+            **窗口**就是请求被计数的时间段。常见三种：
+
+            - **固定窗口** —— 例如 5000 次 / 小时，每个整点重置
+            - **滑动窗口** —— 例如任何 60 分钟内累计 5000 次
+            - **令牌桶** —— 持续匀速补充，请求消耗令牌
+
+            各家实现：
+
+            - **GitHub** 用固定 1 小时窗口
+            - **Cloudflare** 用滑动 5 分钟窗口
+            - **Vercel** 用 GB-hours（连续配额，不按窗口切）
           en: |
             The window is the time over which requests are counted.
             Common shapes: fixed window (e.g., 5000 requests per
@@ -37,11 +67,25 @@ id: x-ratelimit-0-ratelimit-overview
         confidence: 9
         reference:
           - docs/0-ratelimit-overview.en.md
+          - docs/0-ratelimit-overview.cn.md
 
       - id: rate-limit-vs-quota
         question:
           en: Rate limit vs quota — what's the difference?
+          cn: 速率限制 vs 配额 —— 有什么区别？
         answer:
+          cn: |
+            两个不同维度：
+
+            - **速率限制（rate limit）** —— 每时间窗口的请求数（如 5000 次/小时）
+            - **配额（quota）** —— 一段较长周期的总预算（如 100 GB-hours/月）
+
+            一个厂商可以**同时**有两层：
+
+            - API 端点的**每秒速率限制**
+            - 底层资源的**月度配额**
+
+            Vercel 是最典型的例子 —— **1 RPS API 速率限制** + **100 GB-hours/月 Serverless 配额**，两个同时生效。
           en: |
             Rate limit: per-time-window request count (e.g., 5000
             per hour). Quota: total budget over a longer period
@@ -53,3 +97,4 @@ id: x-ratelimit-0-ratelimit-overview
         confidence: 9
         reference:
           - docs/6-vercel.en.md
+          - docs/6-vercel.cn.md

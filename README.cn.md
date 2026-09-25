@@ -21,12 +21,13 @@
 
 | 厂商 | 覆盖面 | 状态 | 文章 |
 | --- | --- | --- | --- |
-| Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`docs/1-cloudflare.en.md`](./docs/1-cloudflare.en.md) |
-| 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`docs/2-aliyun.en.md`](./docs/2-aliyun.en.md) |
-| 腾讯云 | Cloud API 3.0 速率限制 | 待核实 | [`docs/3-tencent.en.md`](./docs/3-tencent.en.md) |
-| GitHub | REST + GraphQL + Actions + 二级限制 | 已核实 2024-11 | [`docs/4-github.en.md`](./docs/4-github.en.md) |
-| Vercel | 函数/Edge 配额 + REST API | 待核实 | [`docs/5-vercel.en.md`](./docs/5-vercel.en.md) |
-| BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`docs/6-bandwagonhost.en.md`](./docs/6-bandwagonhost.en.md) |
+| GitHub | REST + GraphQL + Actions + 二级限制 | 已核实 2024-11 | [`docs/2-github.en.md`](./docs/2-github.en.md) |
+| Cloudflare | REST API + 各产品 HTTP 配额 | 待核实 | [`docs/3-cloudflare.en.md`](./docs/3-cloudflare.en.md) |
+| 阿里云 | OpenAPI 各产品 QPS | 待核实 | [`docs/4-aliyun.en.md`](./docs/4-aliyun.en.md) |
+| 腾讯云 | Cloud API 3.0 速率限制 | 待核实 | [`docs/5-tencent.en.md`](./docs/5-tencent.en.md) |
+| Vercel | 函数/Edge 配额 + REST API | 待核实 | [`docs/6-vercel.en.md`](./docs/6-vercel.en.md) |
+| BandwagonHost | VPS 端口 / 带宽 / 连接上限 | 待核实 | [`docs/7-bandwagonhost.en.md`](./docs/7-bandwagonhost.en.md) |
+| 跨厂商 | HTTP 速率响应头、backoff | n/a | [`docs/1-rate-limit-headers-cheatsheet.en.md`](./docs/1-rate-limit-headers-cheatsheet.en.md) |
 
 ## 一览表
 
@@ -57,7 +58,18 @@
 - `LICENSE` —— Apache 2.0（代码、文章、脚本）
 - `LICENSE-data` —— CC-BY-4.0（`data/` 下的数据）
 
-## 贡献
+## 贡献 —— 欢迎参与
 
-见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。欢迎外部 PR 修
-改数据、补充厂商、改文章；团队会对每次改动签字。
+欢迎外部 PR 修改数据、补充厂商、改文章；团队会对每次改动签字。**建议先 issue、再 PR** —— 先开 issue 让 maintainer 看一下范围，确认后再发 PR。
+
+三个 issue 模板，挑最贴近的一个：
+
+| 想做什么 | Issue 类型 |
+| --- | --- |
+| 新增一个厂商 / API 表面进来监控 | [`monitor-target`](https://github.com/x-cmd/ratelimit/issues/new?template=monitor-target.yml) |
+| 修一个错的 / 过期的速率数字 | [`errata`](https://github.com/x-cmd/ratelimit/issues/new?template=errata.yml) |
+| 改文档 / FAQ / schema / 其它任何建议 | [`other`](https://github.com/x-cmd/ratelimit/issues/new?template=other-suggestion.yml) |
+
+> **AI agent 创建 issue** —— 模板里以 `type: <三类之一>` 开头，每类都有专门的提示。**先读提示块**；任何声明必须给官方文档 URL；**在 maintainer 确认范围之前不要开 PR**。
+
+完整流程见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。

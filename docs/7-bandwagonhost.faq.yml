@@ -1,13 +1,25 @@
 id: x-ratelimit-7-bandwagonhost
 
-<data>:
+data:
   - name:
       en: bandwagonhost
+      cn: bandwagonhost
     qa:
       - id: bandwagonhost-port-25
         question:
           en: Why can't I send email from my BandwagonHost VPS?
+          cn: 为什么我的 BandwagonHost VPS 发不了邮件？
         answer:
+          cn: |
+            BandwagonHost 所有 VPS 套餐默认**封禁出站 25 端口（SMTP）**——这是他们 TOS 里的反垃圾策略。
+
+            三个绕开办法：
+
+            1. **提交工单申请解封** —— 准备好正当用途（事务邮件，不是群发）
+            2. **用事务邮件服务商** —— SendGrid / Mailgun / Postmark / SES 都走 587 端口（或 465 + TLS），**这个端口没被封**
+            3. **用 HTTP API** —— 完全不用 SMTP
+
+            改用其它端口或 Gmail 中转 SMTP 都很脆弱而且违反 TOS。
           en: |
             Outbound port 25 (SMTP) is blocked by default on all
             BandwagonHost VPS plans per their TOS — anti-spam
@@ -22,11 +34,19 @@ id: x-ratelimit-7-bandwagonhost
         confidence: 9
         reference:
           - docs/7-bandwagonhost.en.md
+          - docs/7-bandwagonhost.cn.md
 
       - id: bandwagonhost-bandwidth-soft-cap
         question:
           en: What happens if I exceed my monthly bandwidth?
+          cn: 超出每月带宽配额会怎样？
         answer:
+          cn: |
+            带宽上限是**软限制**，不是硬切。
+
+            BandwagonHost 在你接近上限时会发通知；大套餐可能会收超额费。**直接断网**的情况少见。
+
+            如果你的业务经常撞上限，**升级到更高档套餐**比指望他们给你提配额现实。
           en: |
             Bandwidth caps are soft, not hard. BandwagonHost
             notifies you when you approach the limit; larger
@@ -37,3 +57,4 @@ id: x-ratelimit-7-bandwagonhost
         confidence: 8
         reference:
           - docs/7-bandwagonhost.en.md
+          - docs/7-bandwagonhost.cn.md

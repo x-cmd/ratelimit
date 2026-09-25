@@ -21,8 +21,8 @@ x-json-ld:
 | Limit | Auth | Cap | Window |
 | --- | --- | --- | --- |
 | **Primary REST** | PAT (Personal Access Token) / OAuth / GitHub App | 5000 req / token or installation | 1 hr |
+| **Primary REST** | `${{ secrets.GITHUB_TOKEN }}` (Actions auto-token) | 1000 req / repo (shared by all workflow runs in the repo) | 1 hr |
 | **Primary REST** | None | 60 req / source IP | 1 hr |
-| **GitHub Actions auto token** | `${{ secrets.GITHUB_TOKEN }}` | 1000 req / repo (all workflow runs in repo share) | 1 hr |
 | **GraphQL** | PAT / OAuth / GitHub App (any one) | 5000 points / token (cost-based) | 1 hr |
 | **Search** | PAT / OAuth / GitHub App (any one) | 30 req / user | 1 min |
 | **Actions API** | PAT / OAuth / GitHub App (any one) | 1000 req / repo | 1 hr |
@@ -38,6 +38,7 @@ x-json-ld:
 **Detailed mechanic per limit**:
 
 - **Primary REST** — PAT / OAuth / GitHub App user tokens all share this bucket (GitHub Apps count per installation). The key is **token or installation**, not GitHub account — 3 PATs = 3 independent budgets. GitHub Apps can [request higher quotas](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app), but 5000/hr is enough for typical workflows.
+- **Primary REST (Actions auto-token)** — `${{ secrets.GITHUB_TOKEN }}` is GitHub's auto-issued token for workflow runs. It's *also* Primary REST auth, but bucketed by **repo** at 1000/hr, so every workflow run in the repo competes for the same pool. See Section 5 for the CI-wall story and the permissions example.
 
 - **GraphQL** — each query costs 1-10 points depending on the **highest-cost field** in the query:
 
@@ -57,16 +58,20 @@ x-json-ld:
 
   **Inspect cost**: add `rateLimit { cost remaining resetAt }` field to your query.
 
+  **Mix REST + GraphQL to spread load** — `X-RateLimit-Resource` exposes `graphql` (5000 points/hr) and `core` (5000 req/hr) as **separate budgets**. Same token, two different buckets — you don't have to pick one. A practical pattern: use GraphQL to gather N related fields in one shot (cheaper in round-trips and easier to bound total cost), use REST for one-off lookups where shaping a GraphQL query isn't worth it.
+
+  **Aggregation features are dramatically cheaper via GraphQL** — when one screen needs star count, release info, contributor count, languages, and a "merged PRs in last 30d" all together, that's a 5-call REST sequence (or worse, 8+ REST search calls once you add time windows). One GraphQL query fetches the same data and bills against the 5000 points/hr bucket instead of mixing 30/min search with 5000/h core. Concrete case: `x repo card` went from **11 HTTP requests per card at 30/min search bottleneck (~180 cards/hr)** to **3 HTTP requests per card at 5000/h graphql bottleneck (~2500 cards/hr)** — a **~14× throughput** lift, just by moving the search aggregations into a single GraphQL root-level `search(...)` aliased next to `repository(...)`. Story: [`x-bash/repo/.x-cmd/story/260824.x-repo-card-graphql-consolidation.md`](https://github.com/x-bash/repo/blob/main/.x-cmd/story/260824.x-repo-card-graphql-consolidation.md).
+
 - **Search** — 30/min, separate bucket. Search is much more expensive than REST primary (every query redoes indexing + ranking). REST primary quota does **NOT** cover `/search/*` — separate bucket.
 
 - **Actions API** — 1000/hr/repo. All endpoints under `/repos/<o>/<r>/actions/*` share this. Dashboard integrations that poll Actions heavily will hit it.
 
-- **Secondary** — heuristic abuse detection, no published threshold. Triggered by:
-  - Short bursts (even with primary headroom)
-  - Concurrent in-flight requests
-  - Repeated identical-content requests in a short window
+- **Secondary** — an abuse-detection layer sitting on top of the primary quota. No published thresholds; GitHub fires it when it sees:
+  - **Burst traffic** — a flood of requests in a short window, even if your primary quota still has plenty of room
+  - **Concurrent pile-up** — too many requests in flight at the same time
+  - **Repeat hammering** — asking for the same resource over and over within seconds
 
-  Returns 429 + `Retry-After`. **Looks identical to primary 429** — you can't tell from the response which bucket fired.
+  Response is 429 + `Retry-After`, **indistinguishable from a primary 429**. There's no header that says "this is secondary"; you only know which bucket fired by checking your own traffic pattern afterward.
 
 ---
 
@@ -167,6 +172,31 @@ Points:
 - On by default, no setup required.
 - **Quota: 1000 req/hr/repo** — shared across all Actions API endpoints in that repo.
 
+**Declared permissions** (not a rate-limit knob, but adjacent — the token's reach is exactly what you whitelist):
+
+```yaml
+# .github/workflows/ci.yml
+name: ci
+on: [push, pull_request]
+
+permissions:
+  contents: read        # checkout the repo
+  issues: write         # open / comment on issues
+  pull-requests: write  # comment / label PRs
+  checks: write         # write check runs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+               https://api.github.com/repos/${{ github.repository }}/issues
+```
+
+Default permission set is `contents: read` at the workflow level since 2023 — anything else you have to opt into. The token never has write access to anything outside what you list under `permissions:`, even if the repo's default branch allows it.
+
 **CI pitfall**: N workflows running concurrently in the same repo all share GITHUB_TOKEN. They share the **single 1000/hr/repo budget**. One runaway workflow (heavy polling) takes out the rest.
 
 Fixes:
@@ -180,11 +210,6 @@ Fixes:
 
 ---
 
-## Sources
+## Sources — based on the GitHub blog
 
-- Primary REST: <https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api>
-- GraphQL: <https://docs.github.com/en/graphql/overview/resource-limitations>
-- Search: <https://docs.github.com/en/rest/search>
-- Actions: <https://docs.github.com/en/rest/actions>
-- Secondary: <https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>
-- GitHub Apps auth: <https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app>
+- Secondary rate limits (the canonical engineering write-up — also covers primary quota, Actions, and how the layers interact): <https://github.blog/developer-skills/github/how-to-prevent-secondary-rate-limit-issues/>

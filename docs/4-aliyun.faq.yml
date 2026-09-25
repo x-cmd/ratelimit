@@ -1,13 +1,25 @@
 id: x-ratelimit-4-aliyun
 
-<data>:
+data:
   - name:
       en: aliyun
+      cn: 阿里云
     qa:
       - id: aliyun-why-no-headers
         question:
           en: Why doesn't Aliyun return standard rate-limit headers?
+          cn: 为什么阿里云不返回标准的速率限制响应头？
         answer:
+          cn: |
+            阿里云 OpenAPI 用的是**自定义错误码体系**，不走 RFC 6585 的 429 + `Retry-After`。
+
+            触发限速时，响应 body 里会有一个 `Code` 字段，三选一：
+
+            - `Throttling.User` —— 单用户配额触发
+            - `Throttling.Api` —— 全 API 配额（所有租户共享）触发
+            - `Throttling.CloudBox` —— 单资源 / 单地域配额触发
+
+            客户端**必须 parse body 并按 Code 分支处理**——光看 HTTP 状态码不够。
           en: |
             Aliyun OpenAPI uses a custom error-code scheme rather
             than RFC 6585 429 + Retry-After. On rate-limit trigger,
@@ -19,12 +31,18 @@ id: x-ratelimit-4-aliyun
             this — HTTP status alone is not enough.
         confidence: 9
         reference:
-          - docs/2-aliyun.en.md
+          - docs/4-aliyun.en.md
+          - docs/4-aliyun.cn.md
 
       - id: aliyun-three-tier-throttling
         question:
           en: What's the difference between the three Throttling.* codes?
+          cn: 三个 Throttling.* 错误码有什么区别？
         answer:
+          cn: |
+            - **`Throttling.User`** —— 你的单用户配额触发。最常见，简单退避 1 秒就能恢复。
+            - **`Throttling.Api`** —— API 的全局配额（所有租户共用）触发。你在跟所有用这个 API 的人抢。需要更长的退避（5+ 秒）。
+            - **`Throttling.CloudBox`** —— 资源本身（实例 / 地域）拥塞。可能要几十秒才能恢复——考虑跨地域 failover。
           en: |
             `Throttling.User` — your per-user quota is hit. Most
             common; recovers in 1 second with simple backoff.
@@ -36,12 +54,22 @@ id: x-ratelimit-4-aliyun
             seconds to recover; consider regional failover.
         confidence: 9
         reference:
-          - docs/2-aliyun.en.md
+          - docs/4-aliyun.en.md
+          - docs/4-aliyun.cn.md
 
       - id: aliyun-vs-tencent-wechat-miniprogram
         question:
           en: For a WeChat Mini Program backend, Aliyun or Tencent Cloud?
+          cn: 微信小程序后端，选阿里云还是腾讯云？
         answer:
+          cn: |
+            两家都行，看你在优化什么。
+
+            **腾讯云有微信生态优势**。腾讯的 CloudBase (TCB)、Serverless Cloud Function (SCF)、API Gateway、COS 都有原生的微信小程序集成——官方的 `wx-server-sdk` 和小程序云函数模板都直接对接这些。如果你的小程序是主力产品，后端跟微信 API（登录、支付、订阅消息）紧耦合，腾讯云的工具链深度赢。
+
+            **阿里云匹配更宽泛的国内云功能集**，但没有微信特定的服务。多区域、多产品栈（ECS + RDS + OSS + CDN + WAF 全在一个控制台、一份账单）整合时选阿里云——小程序只是栈上多个负载之一。
+
+            **速率含义略有不同**：腾讯默认 20 QPS 比阿里 100 QPS 紧，所以你的小程序后端跑大量并发调用时，腾讯的低默认会推你更激进地用 SCF / CloudBase；阿里则是按 ECS / RDS 规格提前算好。
           en: |
             Both work; pick by what you're optimizing for.
 
@@ -71,13 +99,22 @@ id: x-ratelimit-4-aliyun
             per-ECS / per-RDS model.
         confidence: 8
         reference:
-          - docs/2-aliyun.en.md
-          - docs/3-tencent.en.md
+          - docs/4-aliyun.en.md
+          - docs/5-tencent.en.md
 
       - id: aliyun-vs-tencent-global-tenancy
         question:
           en: WeChat Mini Program needs cross-region deployment — Aliyun or Tencent?
+          cn: 微信小程序要跨地域部署，选阿里云还是腾讯云？
         answer:
+          cn: |
+            **腾讯云**在中国大陆 APAC 覆盖更好，但全球节点少。**阿里云**通过 Alibaba Cloud 国际品牌在全球有更多地域（美东、美西、欧洲、APAC 等）。
+
+            小程序只服务大陆用户的话，两家都行；腾讯到微信大陆 API 的延迟略好一点。
+
+            服务海外华人用户时，阿里云的**国际地域**给你更好的全球延迟。腾讯的海外地域存在但数量少。
+
+            **速率层面单区域和多区域没区别** —— 两家都在每个地域独立算相同的 per-API 配额。单区域部署高负载时，阿里的 `CloudBox` / 地域级限流和腾讯的地域级限流都会撞。
           en: |
             Tencent Cloud has better APAC coverage in mainland
             China but a smaller global footprint. Aliyun has
@@ -100,5 +137,6 @@ id: x-ratelimit-4-aliyun
             deployments.
         confidence: 8
         reference:
-          - docs/3-tencent.en.md
+          - docs/4-aliyun.en.md
+          - docs/5-tencent.en.md
 

@@ -124,7 +124,7 @@ Three things to watch:
 ## Reference links
 
 - ECS API rate limits: <https://help.aliyun.com/document_detail/25485.html>
-- General OpenAPI limits: see each product's "使用限制" section
+- General OpenAPI limits: see each product's "Usage limits" section
 - RAM API limits: see RAM product docs
 
 Specific numbers need CI scraper to write to `data/aliyun.yaml`.

@@ -1,5 +1,5 @@
 ---
-name: 1-github
+name: 2-github
 description: "GitHub rate limits — quick reference (5 limits + 5 download surfaces). Primary REST 5000/hr (per token / per installation), GraphQL 5000 points/hr cost-based, Search 30/min, Actions 1000/hr/repo, Secondary heuristic. Download surfaces: Releases API counts; HTML scrape counts (UI limit); archive / raw / CDN do NOT count."
 type: reference
 

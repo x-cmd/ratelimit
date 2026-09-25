@@ -48,13 +48,13 @@ fallback strategies).
 
 | Vendor | Surface | Status | Article |
 | --- | --- | --- | --- |
-| **GitHub** | REST + GraphQL + Actions + secondary + **5 download strategies (release / HTML / archive / raw / CDN)** | verified 2024-11 | [`1-github`](./1-github.en.md) |
+| **GitHub** | REST + GraphQL + Actions + secondary + **5 download strategies (release / HTML / archive / raw / CDN)** | verified 2024-11 | [`2-github`](./2-github.en.md) |
 | Cloudflare | REST API + per-product HTTP caps | unverified | [`3-cloudflare`](./3-cloudflare.en.md) |
 | 阿里云 (Aliyun) | OpenAPI per-product QPS | unverified | [`4-aliyun`](./4-aliyun.en.md) |
 | 腾讯云 (Tencent Cloud) | Cloud API 3.0 | unverified | [`5-tencent`](./5-tencent.en.md) |
 | Vercel | Function / Edge + REST API | unverified | [`6-vercel`](./6-vercel.en.md) |
 | BandwagonHost | VPS-level caps | unverified | [`7-bandwagonhost`](./7-bandwagonhost.en.md) |
-| Cross-vendor | HTTP rate-limit headers, backoff | n/a | [`2-rate-limit-headers-cheatsheet`](./2-rate-limit-headers-cheatsheet.en.md) |
+| Cross-vendor | HTTP rate-limit headers, backoff | n/a | [`1-rate-limit-headers-cheatsheet`](./1-rate-limit-headers-cheatsheet.en.md) |
 
 ## How to consume
 
@@ -82,19 +82,19 @@ Each vendor has its own article covering practical patterns
 specific to that vendor (header semantics, error code
 conventions, gotchas):
 
-- [`1-cloudflare`](./1-cloudflare.md) — REST quota,
-  `cf-mitigated` vs 429 distinction.
-- [`2-aliyun`](./2-aliyun.md) — open API per-user QPS, the
-  `Throttling.*` error code scheme.
-- [`3-tencent`](./3-tencent.md) — Cloud API 3.0,
-  `X-RateLimit-*` headers, `DescribeApiRateLimit`.
-- [`4-github`](./4-github.md) — REST + GraphQL + Actions
+- [`2-github`](./2-github.en.md) — REST + GraphQL + Actions
   + Search + secondary rate limits, header semantics.
+- [`3-cloudflare`](./3-cloudflare.en.md) — REST quota,
+  `cf-mitigated` vs 429 distinction.
+- [`4-aliyun`](./4-aliyun.en.md) — open API per-user QPS, the
+  `Throttling.*` error code scheme.
+- [`5-tencent`](./5-tencent.en.md) — Cloud API 3.0,
+  `X-RateLimit-*` headers, `DescribeApiRateLimit`.
 - [`6-vercel`](./6-vercel.en.md) — Function / Edge Function
   quotas, REST API 1 RPS default, RFC 9745 headers.
 - [`7-bandwagonhost`](./7-bandwagonhost.en.md) — VPS port 25
   block, bandwidth caps, connection limits.
-- [`7-rate-limit-headers-cheatsheet`](./7-rate-limit-headers-cheatsheet.md) —
+- [`1-rate-limit-headers-cheatsheet`](./1-rate-limit-headers-cheatsheet.en.md) —
   HTTP-rate-limit header conventions across vendors, with
   cross-reference back to per-vendor articles.
 

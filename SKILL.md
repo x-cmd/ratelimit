@@ -37,19 +37,22 @@ grep -rE 'surface:' data/ | sort -u | head -30
 Each vendor has its own article under `docs/<n>-<vendor>.md`
 (matching the `x-cmd/cve` article pattern):
 
-- [`docs/1-cloudflare.en.md`](./docs/1-cloudflare.en.md) — REST API
-  quota, per-product HTTP caps, `cf-mitigated` vs 429.
-- [`docs/2-aliyun.en.md`](./docs/2-aliyun.en.md) — open API per-user
-  QPS, the `Throttling.*` error code scheme.
-- [`docs/3-tencent.en.md`](./docs/3-tencent.en.md) — Cloud API 3.0,
-  `X-RateLimit-*` headers, `DescribeApiRateLimit`.
-- [`docs/4-github.en.md`](./docs/4-github.en.md) — REST + GraphQL +
+- [`docs/2-github.en.md`](./docs/2-github.en.md) — REST + GraphQL +
   Actions + Search + secondary rate limits, header semantics.
-- [`docs/5-vercel.en.md`](./docs/5-vercel.en.md) — Function / Edge
+- [`docs/3-cloudflare.en.md`](./docs/3-cloudflare.en.md) — REST API
+  quota, per-product HTTP caps, `cf-mitigated` vs 429.
+- [`docs/4-aliyun.en.md`](./docs/4-aliyun.en.md) — open API per-user
+  QPS, the `Throttling.*` error code scheme.
+- [`docs/5-tencent.en.md`](./docs/5-tencent.en.md) — Cloud API 3.0,
+  `X-RateLimit-*` headers, `DescribeApiRateLimit`.
+- [`docs/6-vercel.en.md`](./docs/6-vercel.en.md) — Function / Edge
   Function quotas, REST API 1 RPS default, RFC 9745 headers.
-- [`docs/6-bandwagonhost.en.md`](./docs/6-bandwagonhost.en.md) — VPS
+- [`docs/7-bandwagonhost.en.md`](./docs/7-bandwagonhost.en.md) — VPS
   port 25 block, bandwidth caps, connection limits; not an
   API-rate-limit story in the usual sense.
+- [`docs/1-rate-limit-headers-cheatsheet.en.md`](./docs/1-rate-limit-headers-cheatsheet.en.md) —
+  cross-vendor response-header matrix (`X-RateLimit-*`, `Retry-After`,
+  `cf-mitigated`, IETF `RateLimit-*` draft).
 
 ## Common queries
 
@@ -61,7 +64,7 @@ yq '.plans[0].product_limits[] | select(.surface | contains("HTTP"))' data/cloud
 yq '.header_conventions' data/github.yaml
 
 # Aliyun's non-standard error-code scheme
-grep -A 5 "Throttling" docs/2-aliyun.en.md
+grep -A 5 "Throttling" docs/4-aliyun.en.md
 ```
 
 ## Schema (per `data/<vendor>.yaml`)

@@ -1,4 +1,4 @@
-id: x-ratelimit-2-rate-limit-headers
+id: x-ratelimit-1-rate-limit-headers
 
 data:
   - name:
@@ -48,8 +48,8 @@ data:
             Full matrix in the article.
         confidence: 10
         reference:
-          - docs/2-rate-limit-headers-cheatsheet.cn.md
-          - docs/2-rate-limit-headers-cheatsheet.en.md
+          - docs/1-rate-limit-headers-cheatsheet.cn.md
+          - docs/1-rate-limit-headers-cheatsheet.en.md
 
       - id: retry-after-format
         question:
@@ -74,7 +74,7 @@ data:
             Unlike GitHub's `X-RateLimit-Reset` (absolute UNIX epoch), `Retry-After` is relative.
         confidence: 10
         reference:
-          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/1-rate-limit-headers-cheatsheet.cn.md
 
       - id: x-ratelimit-reset-vs-retry-after
         question:
@@ -109,7 +109,7 @@ data:
             Common footgun: treating `X-RateLimit-Reset` as relative.
         confidence: 10
         reference:
-          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/1-rate-limit-headers-cheatsheet.cn.md
 
       - id: cf-mitigated-not-rate-limit
         question:
@@ -140,7 +140,7 @@ data:
             Different from true rate limit (429 + `Retry-After`). Conflating them makes the fix worse.
         confidence: 10
         reference:
-          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/1-rate-limit-headers-cheatsheet.cn.md
           - docs/3-cloudflare.cn.md
 
       - id: cloudflare-no-x-ratelimit-headers
@@ -166,7 +166,7 @@ data:
             Don't write "read `X-RateLimit-Remaining` to pre-check" logic for Cloudflare — that header won't come.
         confidence: 9
         reference:
-          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/1-rate-limit-headers-cheatsheet.cn.md
           - docs/3-cloudflare.cn.md
 
       - id: search-engine-headers
@@ -198,7 +198,7 @@ data:
             - Don't rely on `X-RateLimit-*` family — these services don't send it
         confidence: 7
         reference:
-          - docs/2-rate-limit-headers-cheatsheet.cn.md
+          - docs/1-rate-limit-headers-cheatsheet.cn.md
 
   - name:
       en: not covered here (separate features)
@@ -213,7 +213,7 @@ data:
             本文是**跨服务响应头速查**，不列具体配额数字。
 
             具体配额见各服务专门文章：
-            - **GitHub**：5000 req/h token、30 req/min Search、1000 req/h/repo Actions、1000 req/h/repo GITHUB_TOKEN 等——见 [1-github](1-github) §一
+            - **GitHub**：5000 req/h token、30 req/min Search、1000 req/h/repo Actions、1000 req/h/repo GITHUB_TOKEN 等——见 [2-github](2-github) §一
             - **Cloudflare**：1200 req/5min/token REST API、Workers/KV/R2/D1 各产品上限——见 [3-cloudflare](3-cloudflare) §一 §二 §三
             - **Bing / IndexNow / Yahoo / DuckDuckGo / Baidu / Shenma**：见后续专门文章
 
@@ -224,7 +224,7 @@ data:
             This article is a **cross-service header quick reference**, not a rate-limit numbers reference.
 
             Specific numbers in each service's dedicated article:
-            - **GitHub**: 5000 req/h token, 30 req/min Search, 1000 req/h/repo Actions, 1000 req/h/repo GITHUB_TOKEN — see [1-github](1-github) §1
+            - **GitHub**: 5000 req/h token, 30 req/min Search, 1000 req/h/repo Actions, 1000 req/h/repo GITHUB_TOKEN — see [2-github](2-github) §1
             - **Cloudflare**: 1200 req/5min/token REST API, per-product caps for Workers/KV/R2/D1 — see [3-cloudflare](3-cloudflare) §1 §2 §3
             - **Bing / IndexNow / Yahoo / DuckDuckGo / Baidu / Shenma**: see future dedicated articles
 
@@ -233,7 +233,7 @@ data:
             - Cloudflare: <https://developers.cloudflare.com/fundamentals/api/reference/limits/>
         confidence: 10
         reference:
-          - docs/1-github.cn.md
+          - docs/2-github.cn.md
           - docs/3-cloudflare.cn.md
 
       - id: not-covered-handling-429
@@ -244,7 +244,7 @@ data:
           cn: |
             处理逻辑各服务不同：
 
-            - **GitHub**：遵守 `Retry-After`，睡到 `X-RateLimit-Reset`，避免突发——见 [1-github](1-github) §四
+            - **GitHub**：遵守 `Retry-After`，睡到 `X-RateLimit-Reset`，避免突发——见 [2-github](2-github) §四
             - **Cloudflare**：`429` 降速退避；`cf-mitigated` 改节奏 / UA / 换 IP（**别自动重试**）——见 [3-cloudflare](3-cloudflare) §四
             - **其他服务**：大多裸 429，没有详细 header——降速 + 保守并发
 
@@ -256,7 +256,7 @@ data:
           en: |
             Handling differs by service:
 
-            - **GitHub**: honor `Retry-After`, sleep until `X-RateLimit-Reset`, avoid bursts — see [1-github](1-github) §4
+            - **GitHub**: honor `Retry-After`, sleep until `X-RateLimit-Reset`, avoid bursts — see [2-github](2-github) §4
             - **Cloudflare**: `429` = slow + back off; `cf-mitigated` = change cadence / UA / IP (**don't auto-retry**) — see [3-cloudflare](3-cloudflare) §4
             - **Other services**: mostly bare 429, sparse detail — slow down + conservative concurrency
 
@@ -267,7 +267,7 @@ data:
             4. Conditional requests reduce wasted responses
         confidence: 10
         reference:
-          - docs/1-github.cn.md
+          - docs/2-github.cn.md
           - docs/3-cloudflare.cn.md
 
       - id: not-covered-ietf-draft

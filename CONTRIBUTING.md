@@ -33,13 +33,13 @@ External PRs are welcome for:
 │   └── bandwagonhost.yaml
 ├── docs/                   ← long-form articles (served at x-cmd.com/ratelimit)
 │   ├── 0-ratelimit-overview.{en.md,cn.md,llms.md,faq.yml}
-│   ├── 1-cloudflare.{en.md,cn.md,llms.md,faq.yml}
-│   ├── 2-aliyun.{en.md,cn.md,llms.md,faq.yml}
-│   ├── 3-tencent.{en.md,cn.md,llms.md,faq.yml}
-│   ├── 4-github.{en.md,cn.md,llms.md,faq.yml}
-│   ├── 5-vercel.{en.md,cn.md,llms.md,faq.yml}
-│   ├── 6-bandwagonhost.{en.md,cn.md,llms.md,faq.yml}
-│   └── 7-rate-limit-headers-cheatsheet.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 1-rate-limit-headers-cheatsheet.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 2-github.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 3-cloudflare.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 4-aliyun.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 5-tencent.{en.md,cn.md,llms.md,faq.yml}
+│   ├── 6-vercel.{en.md,cn.md,llms.md,faq.yml}
+│   └── 7-bandwagonhost.{en.md,cn.md,llms.md,faq.yml}
 └── .github/
     └── workflows/
         └── (scrape.yml will go here)
