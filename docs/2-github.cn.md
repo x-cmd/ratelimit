@@ -21,7 +21,7 @@ x-json-ld:
 | 限速类型 | 认证 | 上限 | 窗口 |
 | --- | --- | --- | --- |
 | **Primary REST** | PAT（个人访问令牌）/ OAuth / GitHub App | 5000 req / token 或 installation | 1 小时 |
-| **Primary REST** | `${{ secrets.GITHUB_TOKEN }}`（Actions 自动 token） | 1000 req / repo（同 repo 的所有 workflow run 共享） | 1 小时 |
+| **Primary REST** | <code v-pre>${{ secrets.GITHUB_TOKEN }}</code>（Actions 自动 token） | 1000 req / repo（同 repo 的所有 workflow run 共享） | 1 小时 |
 | **Primary REST** | 无 | 60 req / source IP | 1 小时 |
 | **GraphQL** | PAT / OAuth / GitHub App（任一即可） | 5000 点 / token（按查询成本算） | 1 小时 |
 | **Search** | PAT / OAuth / GitHub App（任一即可） | 30 req / user | 1 分钟 |
@@ -38,7 +38,7 @@ x-json-ld:
 **各限速类型 mechanic**：
 
 - **Primary REST** —— PAT / OAuth / GitHub App 的用户令牌都用这个桶（GitHub App 按 installation 算）。配额按 token 或 installation 算，不是按 GitHub 账号——3 把 PAT = 3 个独立预算。GitHub Apps 可[申请更高配额](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app)，但典型工作流 5000/小时够用。
-- **Primary REST（Actions 自动 token）** —— `${{ secrets.GITHUB_TOKEN }}` 是 GitHub 给 workflow run 自动签发的 token，本质上**也是 Primary REST 桶**，但按 **repo** 算预算、每 repo 只有 1000/h，所以同一个 repo 的所有 workflow run 抢同一份额度。CI 撞墙的故事和权限声明示例见第五节。
+- **Primary REST（Actions 自动 token）** —— <code v-pre>${{ secrets.GITHUB_TOKEN }}</code> 是 GitHub 给 workflow run 自动签发的 token，本质上**也是 Primary REST 桶**，但按 **repo** 算预算、每 repo 只有 1000/h，所以同一个 repo 的所有 workflow run 抢同一份额度。CI 撞墙的故事和权限声明示例见第五节。
 
 - **GraphQL** —— 每个查询按**最高成本字段**扣 1-10 点：
 
@@ -166,7 +166,7 @@ def call_github(url, headers, max_retries=5):
 
 ## 五、GITHUB_TOKEN —— CI 场景的隐性撞墙点
 
-`${{ secrets.GITHUB_TOKEN }}` 是 GitHub Actions 自动提供的 token：
+<code v-pre>${{ secrets.GITHUB_TOKEN }}</code> 是 GitHub Actions 自动提供的 token：
 
 - 每个 workflow run 自动创建、run 结束自动销毁。
 - 默认开启，不用额外配置。
