@@ -1,6 +1,6 @@
 ---
 x-title: GitHub rate limits — 5000/hr token + secondary heuristic + 5 download methods
-x-desc: GitHub's 5 rate limits: authenticated REST 5000/hr per token / Search 30/min / Actions 1000/hr per repo / GITHUB_TOKEN 1000/hr per repo / secondary heuristic. 5 alternative download methods when you hit the limit: Releases API / HTML / archive / raw / CDN (only Releases API counts against the API quota).
+x-desc: "GitHub's 5 rate limits: authenticated REST 5000/hr per token / Search 30/min / Actions 1000/hr per repo / GITHUB_TOKEN 1000/hr per repo / secondary heuristic. 5 alternative download methods when you hit the limit: Releases API / HTML / archive / raw / CDN (only Releases API counts against the API quota)."
 x-sidebar: GitHub rate limits
 x-keywords: github, rate limit, ratelimit, api quota, rest api, graphql, actions, secondary rate limit, x-ratelimit, pat, github app, releases api, codeload, raw.githubusercontent.com, jsdelivr
 x-json-ld:
@@ -21,7 +21,7 @@ x-json-ld:
 | Limit | Auth | Cap | Window |
 | --- | --- | --- | --- |
 | **Primary REST** | PAT (Personal Access Token) / OAuth / GitHub App | 5000 req / token or installation | 1 hr |
-| **Primary REST** | `${{ secrets.GITHUB_TOKEN }}` (Actions auto-token) | 1000 req / repo (shared by all workflow runs in the repo) | 1 hr |
+| **Primary REST** | <code v-pre>${{ secrets.GITHUB_TOKEN }}</code> (Actions auto-token) | 1000 req / repo (shared by all workflow runs in the repo) | 1 hr |
 | **Primary REST** | None | 60 req / source IP | 1 hr |
 | **GraphQL** | PAT / OAuth / GitHub App (any one) | 5000 points / token (cost-based) | 1 hr |
 | **Search** | PAT / OAuth / GitHub App (any one) | 30 req / user | 1 min |
@@ -38,7 +38,7 @@ x-json-ld:
 **Detailed mechanic per limit**:
 
 - **Primary REST** — PAT / OAuth / GitHub App user tokens all share this bucket (GitHub Apps count per installation). The key is **token or installation**, not GitHub account — 3 PATs = 3 independent budgets. GitHub Apps can [request higher quotas](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/about-choosing-a-github-app), but 5000/hr is enough for typical workflows.
-- **Primary REST (Actions auto-token)** — `${{ secrets.GITHUB_TOKEN }}` is GitHub's auto-issued token for workflow runs. It's *also* Primary REST auth, but bucketed by **repo** at 1000/hr, so every workflow run in the repo competes for the same pool. See Section 5 for the CI-wall story and the permissions example.
+- **Primary REST (Actions auto-token)** — <code v-pre>${{ secrets.GITHUB_TOKEN }}</code> is GitHub's auto-issued token for workflow runs. It's *also* Primary REST auth, but bucketed by **repo** at 1000/hr, so every workflow run in the repo competes for the same pool. See Section 5 for the CI-wall story and the permissions example.
 
 - **GraphQL** — each query costs 1-10 points depending on the **highest-cost field** in the query:
 
@@ -166,7 +166,7 @@ Points:
 
 ## 5. GITHUB_TOKEN — the CI wall
 
-`${{ secrets.GITHUB_TOKEN }}` is GitHub Actions' auto-provided token:
+<code v-pre>${{ secrets.GITHUB_TOKEN }}</code> is GitHub Actions' auto-provided token:
 
 - Auto-created per workflow run; destroyed when the run ends.
 - On by default, no setup required.
